@@ -17,11 +17,12 @@ shasum: build
 	shasum -a 256 $(DIST_PATH)/* > $(DIST_PATH)/SHA256SUMS
 
 # Create a release on GitHub
-release:
+release: build
 	git tag $(VERSION) && \
 	git push origin $(VERSION) --force-with-lease && \
 	gh release create $(VERSION) $(DIST_PATH)/* --notes $(RELEASE_NOTES)
 
+# Publish to PyPi
 publish:
 	twine upload $(DIST_PATH)/*
 
