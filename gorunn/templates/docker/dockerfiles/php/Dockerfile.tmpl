@@ -1,0 +1,78 @@
+# -------DON'T EDIT FROM HERE--------
+# change version in project file yaml
+FROM php:{{ version }}-fpm-alpine
+ENV DOCKERIZE_VERSION v0.8.0
+ARG ARCH
+
+{% if version == "8.0" %}
+ENV PHPUNIT_VERSION=9.4.3
+{% else %}
+ENV PHPUNIT_VERSION=11.1.0
+{% endif %}
+WORKDIR /var/www/code
+
+# Install dependencies for the PHP extensions
+RUN apk add --no-cache \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    libzip-dev \
+    autoconf \
+    g++ \
+    make \
+    libevent-dev \
+    icu-dev \
+    mysql-dev \
+    postgresql-dev \
+    libxml2-dev \
+    libxslt-dev \
+    linux-headers \
+    supervisor \
+    bash \
+    npm \
+    yq
+
+RUN NPROC=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || 1) \
+&& docker-php-ext-configure gd --with-freetype --with-jpeg \
+&& docker-php-ext-install -j${NPROC} gd \
+&& docker-php-ext-configure zip \
+&& docker-php-ext-install zip \
+&& pecl install xdebug ev swoole redis \
+&& docker-php-ext-enable swoole redis \
+&& docker-php-ext-configure pcntl \
+&& docker-php-ext-install pcntl \
+&& docker-php-ext-install intl \
+{% if version == "8.0" %}
+&& docker-php-ext-install mysqli pdo_mysql sockets bcmath pdo_pgsql pgsql
+{% else %}
+&& docker-php-ext-install mysqli pdo_mysql sockets bcmath pdo_pgsql pgsql xml soap xsl
+{% endif %}
+
+# Composer
+RUN curl -sS https://getcomposer.org/installer | php \
+&& mv -v composer.phar /usr/local/bin/composer \
+&& ln -s /usr/local/bin/composer /usr/bin/composer \
+&& ls -ahl /usr/bin/composer \
+&& chmod +x /usr/local/bin/composer \
+&& composer --version
+
+#PHP Unit
+RUN curl https://phar.phpunit.de/phpunit-$PHPUNIT_VERSION.phar -L > phpunit.phar \
+&& chmod +x phpunit.phar \
+&& mv phpunit.phar /usr/local/bin/phpunit \
+&& phpunit --version
+
+#Symfony CLI
+RUN wget https://get.symfony.com/cli/installer -O - | bash
+
+#Dockerize
+RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-$ARCH-$DOCKERIZE_VERSION.tar.gz \
+&& tar -C /usr/local/bin -xzvf dockerize-linux-$ARCH-$DOCKERIZE_VERSION.tar.gz \
+&& rm dockerize-linux-$ARCH-$DOCKERIZE_VERSION.tar.gz
+
+
+ENTRYPOINT ["/scripts/entrypoint.sh"]
+EXPOSE 80 8000
+# -------TO HERE--------
+## Can add any additional commands based on user needs##
+

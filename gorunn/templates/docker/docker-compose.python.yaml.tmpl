@@ -1,0 +1,29 @@
+services:
+
+  {{ stack_name }}-{{ name }}:
+    container_name: {{ stack_name }}-{{ name }}
+    image: python:{{ version }}-alpine
+    build:
+      context: .
+      args:
+        ARCH: {{ arch }}
+      dockerfile: {{ workspace_path }}/{{ name }}/Dockerfile.gorunn
+    entrypoint: ["/scripts/entrypoint.sh"]
+    command: ["supervisord"]
+    working_dir: /var/www/code
+    environment:
+      - application_name={{ name }}
+    volumes:
+      - {{ workspace_path }}/{{ name }}:/var/www/code:delegated
+      - {{ projects_local_path }}:/projects
+      - ./mounts/python/scripts/:/scripts/
+      - ./mounts/python/files/supervisord.conf:/etc/supervisord.conf
+      - /var/www/code/.git/
+      - /var/www/code/.vscode/
+      - /var/www/code/.phpstorm/
+      {% if env_vars %}
+    env_file:
+      - ../envs/{{ name }}.env
+      {% endif %}
+    networks:
+      {{ stack_name }}_network:

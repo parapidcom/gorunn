@@ -1,0 +1,114 @@
+networks:
+  {{ stack_name }}_network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"
+    name: ${CONTAINER_NETWORK_NAME}
+    ipam:
+      driver: default
+      config:
+        - subnet: ${CONTAINER_NETWORK_SUBNET}
+
+services:
+
+  {{ stack_name }}-proxy:
+    command: ["supervisord"]
+    container_name: {{ stack_name }}-proxy
+    build:
+      context: ./mounts/proxy/
+      args:
+        ARCH: {{ arch }}
+    restart: on-failure
+    environment:
+        COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
+    volumes:
+      - ./mounts/proxy/certs/self/:/etc/nginx/ssl
+      - ./mounts/proxy/scripts/nginx.sh:/scripts/nginx.sh
+      - ./mounts/proxy/templates/:/templates
+      - ./mounts/proxy/files/supervisord.conf:/etc/supervisord.conf
+      - {{ projects_local_path }}:/projects
+      - ./.env:/.env
+    ports:
+      - '80:80'
+      - '443:443'
+    networks:
+      {{ stack_name }}_network:
+  {% if mysql %}
+  {{ stack_name }}-mysql:
+    container_name: {{ stack_name }}-mysql
+    image: mysql:8
+    command: --max_allowed_packet=67108864
+    environment:
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ALLOW_EMPTY_PASSWORD: true
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - ./src/mysql/local-data:/var/lib/mysql:delegated
+      - ./mounts/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '13306:3306'
+    networks:
+      {{ stack_name }}_network:
+  {% endif %}
+  {% if postgresql %}
+  {{ stack_name }}-postgresql:
+    container_name: {{ stack_name }}-postgresql
+    image: postgres
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./src/postgresql/local-data:/var/lib/postgresql/data
+      - ./mounts/postgresql/:/docker-entrypoint-initdb.d
+    ports:
+      - '15432:5432'
+    networks:
+      {{ stack_name }}_network:
+  {% endif %}
+  {% if redis %}
+  {{ stack_name }}-redis:
+    container_name: {{ stack_name }}-redis
+    image: redis:7-alpine
+    volumes:
+      - ./src/redis/local-data:/data
+    ports:
+      - 16379:6379
+    networks:
+      {{ stack_name }}_network:
+  {% endif %}
+  {% if chroma %}
+  {{ stack_name }}-chroma:
+    container_name: {{ stack_name }}-chroma
+    image: chromadb/chroma
+    volumes:
+      - ./src/chroma/local-data:/chroma/chroma
+    ports:
+      - 18000:8000
+    networks:
+      {{ stack_name }}_network:
+  {% endif %}
+  {% if opensearch %}
+  {{ stack_name }}-opensearch:
+    container_name: {{ stack_name }}-opensearch
+    image: opensearchstaging/opensearch:1.1.0-multi-test
+    volumes:
+        - ./src/opensearch/local-data:/usr/share/opensearch/data
+    environment:
+        - node.name={{ stack_name }}-opensearch
+        - discovery.type=single-node
+        - bootstrap.memory_lock=true
+        - plugins.security.disabled=true
+        - "OPENSEARCH_JAVA_OPTS=-Xms128m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+        - 19200:9200
+    networks:
+        {{ stack_name }}_network:
+  {% endif %}

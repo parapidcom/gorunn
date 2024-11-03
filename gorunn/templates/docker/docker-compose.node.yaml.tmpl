@@ -1,0 +1,28 @@
+services:
+
+  {{ stack_name }}-{{ name }}:
+    container_name: {{ stack_name }}-{{ name }}
+    command: ["supervisord"]
+    build:
+      context: .
+      args:
+        ARCH: {{ arch }}
+      dockerfile: {{ workspace_path }}/{{ name }}/Dockerfile.gorunn
+    working_dir: /var/www/code
+    environment:
+      - application_name={{ name }}
+      - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/var/www/code/node_modules/.bin
+    volumes:
+      - {{ workspace_path }}/{{ name }}:/var/www/code:delegated
+      - {{ projects_local_path }}:/projects
+      - ./mounts/node/scripts:/scripts
+      - ./mounts/node/files/supervisord.conf:/etc/supervisord.conf
+      - /var/www/code/.git/
+      - /var/www/code/.vscode/
+      - /var/www/code/.phpstorm/
+      {% if env_vars %}
+    env_file:
+      - ../envs/{{ name }}.env
+      {% endif %}
+    networks:
+      {{ stack_name }}_network:

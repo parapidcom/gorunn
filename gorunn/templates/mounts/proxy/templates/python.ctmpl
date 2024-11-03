@@ -1,0 +1,24 @@
+# {{ .Env.name }}
+
+server {
+    listen          443 ssl;
+    listen		    80;
+    server_name     {{ .Env.endpoint }};
+    include /etc/nginx/common.conf;
+
+
+    location / {
+        if ($http_origin ~* "^https?://*.\.ngrok\.io$" ) {
+        add_header Access-Control-Allow-Origin $http_origin;
+        }
+        set ${{ .Env.name }}_backend "http://{{ .Env.project }}-{{ .Env.name }}:{{ .Env.listen_port }}";
+        proxy_pass ${{ .Env.name }}_backend;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Sec-WebSocket-Key $http_sec_websocket_key;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

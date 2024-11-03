@@ -1,0 +1,29 @@
+# -------DON'T EDIT FROM HERE--------
+# change version in project file yaml
+FROM node:{{ version }}-alpine
+
+# set environment variables
+ENV PATH "$PATH:.node_modules/.bin"
+ENV NG_CLI_ANALYTICS "false"
+
+# set work directory
+WORKDIR /var/www/code
+
+# Install base dependencies
+RUN apk --update add --no-cache \
+    bash \
+    shadow \
+    autoconf \
+    build-base \
+    openssl-dev \
+    zip \
+    python3 \
+    supervisor \
+    yq
+
+RUN npm install -g pnpm ng
+
+ENTRYPOINT ["/scripts/entrypoint.sh"]
+EXPOSE 4200 3000
+# -------TO HERE--------
+# ------ADD FROM HERE AS NEEDED-----

@@ -1,0 +1,8 @@
+venv/
+__pycache__/
+.DS_Store
+gorunn.egg-info/
+build/
+dist/
+.idea/
+config.yaml

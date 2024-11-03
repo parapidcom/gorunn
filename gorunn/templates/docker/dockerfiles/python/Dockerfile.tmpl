@@ -1,0 +1,30 @@
+# -------DON'T EDIT FROM HERE--------
+# change version in project file yaml
+FROM python:{{ version }}-bullseye
+ARG ARCH
+# Install base dependencies
+RUN apt-get -y update
+RUN apt-get -y upgrade
+RUN apt-get install -y supervisor less telnet
+
+# set work directory
+WORKDIR /var/www/code
+
+# Install base dependencies
+ENV YQ_VERSION="v4.40.5"
+RUN wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${ARCH} \
+&& chmod +x /usr/local/bin/yq
+
+
+RUN set -eux \
+&& pip install --upgrade pip setuptools wheel  \
+&& rm -rf /root/.cache/pip
+
+EXPOSE 3000
+
+# set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENTRYPOINT ["/scripts/entrypoint.sh"]
+# -------TO HERE--------
+# ------ADD FROM HERE AS NEEDED-----
