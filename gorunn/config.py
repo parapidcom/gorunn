@@ -20,6 +20,10 @@ src_directory = sys_directory / 'src'
 envs_directory = config_directory / 'envs'
 config_file = config_directory / 'config.yaml'
 
+default_projects_directory = config_directory / 'projects'
+default_wokspace_directory = config_directory / 'wokspace'
+default_stack_name = 'gorunn'
+
 # Docker Compose network subnet
 subnet = "10.10.0.0/16"
 # Database credentials

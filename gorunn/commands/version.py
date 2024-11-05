@@ -1,6 +1,6 @@
 # src/cli.py
 import click
-from . import __version__  # Adjust the import based on your package structure
+from gorunn import __version__  # Adjust the import based on your package structure
 
 @click.group()
 def cli():

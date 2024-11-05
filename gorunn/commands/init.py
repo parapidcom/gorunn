@@ -9,7 +9,7 @@ from gorunn.commands.trust import trust
 import inquirer
 
 from gorunn.config import subnet, env_template, sys_directory, config_file, docker_compose_template, template_directory, \
-    envs_directory, db_username, db_password, db_root_password, load_config
+    envs_directory, db_username, db_password, db_root_password, load_config, default_projects_directory, default_wokspace_directory, default_stack_name
 from gorunn.commands.destroy import destroy
 from gorunn.helpers import parse_template, getarch
 from gorunn.translations import *
@@ -43,9 +43,10 @@ def clone_or_pull_repository(repo_url, directory):
 
 def check_or_create_directory(directory_path):
     """Ensure the directory exists, create if not."""
-    if not directory_path.exists():
-        directory_path.mkdir(parents=True, exist_ok=True)
-        click.echo(click.style(f"Created directory at: {directory_path}", fg='green'))
+    path = Path(directory_path)
+    if not path.exists():
+        path.mkdir(parents=True, exist_ok=True)
+        click.echo(click.style(f"Created directory at: {path}", fg='green'))
 
 
 def remove_directory(directory_path):
@@ -84,11 +85,12 @@ def validate_absolute_path(value):
 
 
 # Get path once it is validated as starting with /
-def path(prompt_message):
+def path(prompt_message, fallback):
     while True:
         # Prompt user for the workspace path
-        path_from_input = click.prompt(click.style(prompt_message, fg='cyan'), type=str)
+        path_from_input = click.prompt(click.style(prompt_message, fg='cyan'), default=fallback, type=str)
         if validate_absolute_path(path_from_input):
+            check_or_create_directory(path_from_input)
             return path_from_input
         else:
             click.echo(click.style("The path must be absolute and start with '/'.", fg='red'))
@@ -150,11 +152,11 @@ def validate_and_transform_input(input_value):
 # This methid will create config.yaml
 def create_config():
     # Read existing configuration if it exists
-    stack_name_message = f"Please enter your project (no spaces or special characters) [{DOCS_LINK_GETTING_STARTED}]"
-    projects_repo_url_message = f"GitHub repo URL where project files are stored, or leave empty if you want to use it without repo [{DOCS_LINK_PROJECTS}#url]"
-    projects_local_path_message = f"Enter full path to the directory where your project stack is or should be pulled from repo [{DOCS_LINK_PROJECTS}#local-path]"
-    workspace_message = f"Enter the workspace path, where your project repos should be [{DOCS_LINK_config}#workspace_path]"
-    subnet_message = f"Which subnet to use for Docker Compose network?(defaults to {subnet} if not specified) [{DOCS_LINK_config}]"
+    stack_name_message = f"Please enter your project (no spaces or special characters)"
+    projects_repo_url_message = f"GitHub repo URL where project files are stored[leave empty if you want to use it without repo]"
+    projects_local_path_message = f"Enter full path to the directory where your project stack is or should be pulled from repo"
+    workspace_message = f"Enter the workspace path, where your project repos should be"
+    subnet_message = f"Which subnet to use for Docker Compose network? Leave empty to use default"
     db_choices = ['mysql', 'postgresql', 'redis', 'chroma', 'opensearch']
     questions = [
         inquirer.Checkbox('databases',
@@ -164,11 +166,12 @@ def create_config():
     ]
     stack_name = click.prompt(click.style(stack_name_message, fg='cyan'),
                               type=str,
+                              default=default_stack_name,
                               hide_input=False,
                               value_proc=validate_and_transform_input)
-    projects_local_path = path(projects_local_path_message)
-    projects_repo_url = click.prompt(click.style(projects_repo_url_message, fg='cyan'), type=str)
-    workspace_path = path(workspace_message)
+    projects_local_path = path(projects_local_path_message, default_projects_directory)
+    projects_repo_url = click.prompt(click.style(projects_repo_url_message, fg='cyan'), default='', type=str)
+    workspace_path = path(workspace_message, default_wokspace_directory)
     docker_compose_subnet = click.prompt(click.style(subnet_message, fg='cyan'), default=subnet, type=str)
     database_answers = inquirer.prompt(questions)
     projects_config = {
@@ -260,11 +263,9 @@ def init(ctx):
     main_docker_compose_contents = parse_template(docker_compose_template, **substitutions)
     with open(f"{sys_directory}/docker-compose.yaml", 'w') as target_file:
         target_file.write(main_docker_compose_contents)
-    click.echo(click.style(f"Success: docker-compose.yaml", fg='cyan'))
     env_contents = parse_template(env_template, **substitutions)
     with open(f"{sys_directory}/.env", 'w') as target_file:
         target_file.write(env_contents)
-    click.echo(click.style(f"Success: .env", fg='cyan'))
 
     mounts_dir = sys_directory / 'mounts'
     remove_directory(mounts_dir)

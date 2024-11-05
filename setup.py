@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-from gorunn.commands import __version__
+from gorunn import __version__
 
 
 with open('requirements.txt') as f:
@@ -9,11 +9,11 @@ setup(
     name='gorunn',
     version=__version__,
     author='Goran Parapid',
-    author_email='goran.parapid@gmail.com',
+    author_email='goran@parapid.com',
     description='CLI tool for managing local environments',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url='https://github.com/parapidcom/gorunn-py',
+    url='https://github.com/parapidcom/gorunn',
     packages=find_packages(),
     include_package_data=True,
     package_data={
@@ -33,5 +33,5 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: MacOS',
     ],
-    python_requires='>=3.10',
+    python_requires='>=3.9',
 )

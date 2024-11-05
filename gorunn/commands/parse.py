@@ -158,7 +158,6 @@ def parse(ctx):
         docker_compose_content = parse_template(docker_compose_template_path, **substitutions)
         with open(docker_compose_target_path, 'w') as target_file:
             target_file.write(docker_compose_content)
-        click.echo(click.style(f"Success: {project_config['name']}", fg='cyan'))
         docker_compose_paths.append(docker_compose_target_path.name)
 
     # Update the .env file with the correct COMPOSE_FILE order
