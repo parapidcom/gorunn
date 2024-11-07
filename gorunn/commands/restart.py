@@ -3,7 +3,7 @@ import subprocess
 import yaml
 from pathlib import Path
 from gorunn.config import sys_directory, load_config
-from gorunn.helpers import check_docker, get_all_services
+from gorunn.helpers import check_docker, get_all_services, handle_encrypted_envs
 from gorunn.classes.app_validator import AppValidator
 from gorunn.translations import *
 
@@ -18,6 +18,7 @@ def restart(app, include_services=True):
     try:
         config = load_config()
         stack_name = config['stack_name']
+        handle_encrypted_envs(config)
     except:
         click.echo(click.style(NOT_SET_UP, fg='red'))
         click.Abort()

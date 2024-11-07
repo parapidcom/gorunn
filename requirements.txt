@@ -11,3 +11,4 @@ packaging==24.0
 python-dotenv==1.0.1
 inquirer==3.4.0
 psutil==6.1.0
+cryptography==43.0.3

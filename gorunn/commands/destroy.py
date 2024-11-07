@@ -37,7 +37,7 @@ def destroy(app,wipedb=None):
     command.extend('--remove-orphans')
     try:
         subprocess.run(command, check=True, cwd=sys_directory)
-        if app:
+        if app is None:
             click.echo(click.style(f"{stack_name} containers were destroyed successfully.", fg='green'))
         else:
             click.echo(click.style(f"{app} container destroyed successfully.", fg='green'))

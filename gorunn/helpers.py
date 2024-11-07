@@ -9,7 +9,8 @@ import yaml
 import platform
 import socket
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from gorunn.config import docker_template_directory, load_config, sys_directory
+from gorunn.config import docker_template_directory, load_config, sys_directory, envs_directory
+from cryptography.fernet import Fernet
 
 # Check if docker is running
 def check_docker():
@@ -138,3 +139,69 @@ def get_all_services():
             if 'services' in data:
                 services.extend(data['services'].keys())  # Gather all service names
     return services
+
+def encrypt_file(file_path, encryption_key, output_path=None):
+    """Encrypt a file using Fernet encryption."""
+    try:
+        # Convert base64 key to Fernet key
+        if encryption_key.startswith('base64:'):
+            encryption_key = encryption_key[7:]
+        fernet = Fernet(encryption_key.encode())
+
+        with open(file_path, 'rb') as file:
+            file_data = file.read()
+
+        encrypted_data = fernet.encrypt(file_data)
+
+        output_path = output_path or f"{file_path}.encrypted"
+        with open(output_path, 'wb') as encrypted_file:
+            encrypted_file.write(encrypted_data)
+        return True
+    except Exception as e:
+        click.echo(click.style(f"Encryption failed: {str(e)}", fg='red'))
+        return False
+
+def decrypt_file(encrypted_file_path, encryption_key, output_path=None):
+    """Decrypt a file using Fernet encryption."""
+    try:
+        # Convert base64 key to Fernet key
+        if encryption_key.startswith('base64:'):
+            encryption_key = encryption_key[7:]
+        fernet = Fernet(encryption_key.encode())
+
+        with open(encrypted_file_path, 'rb') as file:
+            encrypted_data = file.read()
+
+        decrypted_data = fernet.decrypt(encrypted_data)
+
+        output_path = output_path or encrypted_file_path.replace('.encrypted', '')
+        with open(output_path, 'wb') as decrypted_file:
+            decrypted_file.write(decrypted_data)
+        return True
+    except Exception as e:
+        click.echo(click.style(f"Decryption failed: {str(e)}", fg='red'))
+        return False
+
+def handle_encrypted_envs(config):
+    """Handle decryption of encrypted environment files before starting services."""
+    try:
+        encryption_key = config.get('encryption_key')
+        if not encryption_key:
+            click.echo(click.style("No encryption key found in configuration", fg='yellow'))
+            return
+
+        for encrypted_file in envs_directory.glob('*.env.encrypted'):
+            app_name = encrypted_file.stem.replace('.env', '')
+            env_file = envs_directory / f"{app_name}.env"
+
+            # Skip if unencrypted file already exists
+            if env_file.exists():
+                continue
+
+            if decrypt_file(encrypted_file, encryption_key, env_file):
+                click.echo(click.style(f"Decrypted environment file for {app_name}", fg='green'))
+            else:
+                click.echo(click.style(f"Failed to decrypt environment file for {app_name}", fg='red'))
+
+    except Exception as e:
+        click.echo(click.style(f"Error handling encrypted environment files: {str(e)}", fg='red'))

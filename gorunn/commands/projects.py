@@ -3,8 +3,9 @@ import subprocess
 import yaml
 from datetime import datetime
 from pathlib import Path
-from gorunn.config import config_directory, load_config
+from gorunn.config import config_directory, load_config, envs_directory
 from gorunn.translations import *
+from gorunn.helpers import encrypt_file, decrypt_file
 
 @click.group()
 def projects():
@@ -82,6 +83,53 @@ def publish():
                 click.echo(push_result.stderr)
     else:
         click.echo("There are no new local commits to push.")
+
+@projects.command()
+@click.option('--encrypt', is_flag=True, help="Encrypt the environment file")
+@click.option('--decrypt', is_flag=True, help="Decrypt the environment file")
+@click.option('--app', required=True, help="Specify the application name")
+def env(encrypt, decrypt, app):
+    """Manage environment file encryption/decryption."""
+    if encrypt and decrypt:
+        click.echo(click.style("Cannot specify both --encrypt and --decrypt", fg='red'))
+        return
+
+    if not (encrypt or decrypt):
+        click.echo(click.style("Must specify either --encrypt or --decrypt", fg='red'))
+        return
+
+    try:
+        config = load_config()
+        if not config:
+            click.echo(click.style(NOT_SET_UP, fg='red'))
+            return
+
+        encryption_key = config.get('encryption_key')
+        if not encryption_key:
+            click.echo(click.style("No encryption key found in configuration", fg='red'))
+            return
+
+        env_file = envs_directory / f"{app}.env"
+        encrypted_file = envs_directory / f"{app}.env.encrypted"
+
+        if encrypt:
+            if not env_file.exists():
+                click.echo(click.style(f"Environment file not found: {env_file}", fg='red'))
+                return
+
+            if encrypt_file(env_file, encryption_key, encrypted_file):
+                click.echo(click.style(f"Successfully encrypted environment file for {app}", fg='green'))
+
+        elif decrypt:
+            if not encrypted_file.exists():
+                click.echo(click.style(f"Encrypted environment file not found: {encrypted_file}", fg='red'))
+                return
+
+            if decrypt_file(encrypted_file, encryption_key, env_file):
+                click.echo(click.style(f"Successfully decrypted environment file for {app}", fg='green'))
+
+    except Exception as e:
+        click.echo(click.style(f"Operation failed: {str(e)}", fg='red'))
 
 if __name__ == '__main__':
     projects()
