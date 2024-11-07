@@ -19,7 +19,8 @@ shasum: build
 # Create a release on GitHub
 release: build
 	git tag $(VERSION) && \
-	git push origin $(VERSION) --force-with-lease && \
+	git push origin main && \
+	git push origin $(VERSION) && \
 	gh release create $(VERSION) $(DIST_PATH)/* --notes $(RELEASE_NOTES)
 
 # Publish to PyPi
