@@ -22,7 +22,7 @@ services:
       - /var/www/code/.phpstorm/
       {% if env_vars %}
     env_file:
-      - ../envs/{{ name }}.env
+      - {{envs_directory}}/{{ name }}.env
       {% endif %}
     networks:
       {{ stack_name }}_network:

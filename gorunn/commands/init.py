@@ -7,12 +7,22 @@ import git
 import shutil
 from gorunn.commands.trust import trust
 import inquirer
+import secrets
+import base64
 
 from gorunn.config import subnet, env_template, sys_directory, config_file, docker_compose_template, template_directory, \
     envs_directory, db_username, db_password, db_root_password, load_config, default_projects_directory, default_wokspace_directory, default_stack_name
 from gorunn.commands.destroy import destroy
 from gorunn.helpers import parse_template, getarch
 from gorunn.translations import *
+
+
+
+# Read existing configuration if it exists
+existing_config = {}
+if config_file.exists():
+    with open(config_file, 'r') as file:
+        existing_config = yaml.safe_load(file) or {}
 
 def clone_or_pull_repository(repo_url, directory):
     """Clone or pull the repository depending on the existing state."""
@@ -35,8 +45,9 @@ def clone_or_pull_repository(repo_url, directory):
         if directory.exists():
             shutil.rmtree(directory)  # Clear the directory if it exists
         try:
+            click.echo(click.style(f"Pulling manifests from {repo_url} into {directory}."))
             git.Repo.clone_from(repo_url, directory)
-            click.echo(click.style("Cloned project repository successfully.", fg='green'))
+            click.echo(click.style(f"Cloned project manifests from {repo_url} into {directory}.", fg='green'))
         except Exception as e:
             click.echo(click.style(f"Failed to clone repository: {str(e)}", fg='red'))
 
@@ -45,8 +56,11 @@ def check_or_create_directory(directory_path):
     """Ensure the directory exists, create if not."""
     path = Path(directory_path)
     if not path.exists():
-        path.mkdir(parents=True, exist_ok=True)
-        click.echo(click.style(f"Created directory at: {path}", fg='green'))
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            click.echo(click.style(f"Failed to create directory: {str(e)}", fg='red'))
+            raise click.Abort()
 
 
 def remove_directory(directory_path):
@@ -98,9 +112,10 @@ def path(prompt_message, fallback):
 
 def configure_aider():
     """Handle aider configuration setup through user prompts."""
+    existing_aider = existing_config.get('aider', {})
     aider_enable_question = [
         inquirer.Confirm('setup_aider',
-                         message="Would you like to set up aider?",
+                         message="\033[36mWould you like to set up aider?\033[0m",
                          default=False)
     ]
 
@@ -110,32 +125,39 @@ def configure_aider():
                       choices=['Claude', 'OpenAI', 'Not at this moment'])
     ]
 
-    aider_setup = inquirer.prompt(aider_enable_question)
     aider_config = {
-        'enabled': False,
-        'llm': None,
-        'api_key': None,
+        'enabled': existing_aider.get('enabled', False),
+        'llm': existing_aider.get('llm'),
+        'api_key': existing_aider.get('api_key')
     }
 
+    aider_setup = inquirer.prompt(aider_enable_question)
     if aider_setup['setup_aider']:
         provider_choice = inquirer.prompt(aider_llm_question)
         if provider_choice['aider_llm'] == 'Claude':
             aider_config = {
                 'enabled': True,
                 'llm': 'claude',
-                'api_key': click.prompt(click.style("Please enter your Claude API key", fg='cyan'),
-                                        type=str, hide_input=False)
+                'api_key': click.prompt(
+                    click.style("Please enter your Claude API key", fg='cyan'),
+                    type=str,
+                    default=existing_aider.get('api_key', ''),
+                    hide_input=False
+                )
             }
         elif provider_choice['aider_llm'] == 'OpenAI':
             aider_config = {
                 'enabled': True,
                 'llm': 'openai',
-                'api_key': click.prompt(click.style("Please enter your OpenAI API key", fg='cyan'),
-                                        type=str, hide_input=False)
+                'api_key': click.prompt(
+                    click.style("Please enter your OpenAI API key", fg='cyan'),
+                    type=str,
+                    default=existing_aider.get('api_key', ''),
+                    hide_input=False
+                )
             }
 
     return aider_config
-
 
 
 def validate_and_transform_input(input_value):
@@ -148,31 +170,89 @@ def validate_and_transform_input(input_value):
         raise click.BadParameter("Input should only contain letters and numbers without spaces.")
 
 
+def generate_encryption_key():
+    """Generate a secure encryption key."""
+    return base64.b64encode(secrets.token_bytes(32)).decode('utf-8')
+
+
+def configure_encryption_key():
+    """Handle encryption key configuration through user prompts."""
+    try:
+        existing_key = existing_config.get('encryption_key')
+
+        # If we already have a key in the config, ask if they want to keep it
+        if existing_key:
+            if click.confirm(click.style("Existing encryption key found. Would you like to keep it?", fg='cyan'), default=True):
+                return existing_key
+
+        encryption_key_question = [
+            inquirer.Confirm('has_key',
+                            message="\033[36mDo you already have an encryption key?\033[0m",
+                            default=False)
+        ]
+
+        key_setup = inquirer.prompt(encryption_key_question)
+        if key_setup is None:  # User pressed Ctrl+C
+            raise click.Abort()
+
+        if key_setup['has_key']:
+            encryption_key = click.prompt(
+                click.style("Please enter your encryption key", fg='cyan'),
+                type=str,
+                hide_input=False
+            )
+        else:
+            encryption_key = generate_encryption_key()
+            click.echo(click.style("Generated new encryption key.", fg='green'))
+            click.echo(click.style("Please save this key securely:", fg='yellow'))
+            click.echo(click.style(encryption_key, fg='cyan'))
+
+        return encryption_key
+    except (KeyboardInterrupt, click.Abort):
+        raise click.Abort()
+
 
 # This methid will create config.yaml
-def create_config():
-    # Read existing configuration if it exists
-    stack_name_message = f"Please enter your project (no spaces or special characters)"
-    projects_repo_url_message = f"GitHub repo URL where project files are stored[leave empty if you want to use it without repo]"
+def create_config(import_repo):
+
+    stack_name_message = f"Please enter your stack name (no spaces or special characters)"
+    projects_repo_url_message = f"GitHub repo URL of project manifests[leave empty if you want to use it without repo]"
     projects_local_path_message = f"Enter full path to the directory where your project stack is or should be pulled from repo"
-    workspace_message = f"Enter the workspace path, where your project repos should be"
+    workspace_message = f"Enter the workspace path for the projects"
     subnet_message = f"Which subnet to use for Docker Compose network? Leave empty to use default"
     db_choices = ['mysql', 'postgresql', 'redis', 'chroma', 'opensearch']
     questions = [
         inquirer.Checkbox('databases',
                           message="Select databases to use(multiple choices possible)",
                           choices=db_choices,
+                          default=[db for db in db_choices if existing_config.get('databases', {}).get(db, False)]
                           ),
     ]
-    stack_name = click.prompt(click.style(stack_name_message, fg='cyan'),
-                              type=str,
-                              default=default_stack_name,
-                              hide_input=False,
-                              value_proc=validate_and_transform_input)
-    projects_local_path = path(projects_local_path_message, default_projects_directory)
-    projects_repo_url = click.prompt(click.style(projects_repo_url_message, fg='cyan'), default='', type=str)
-    workspace_path = path(workspace_message, default_wokspace_directory)
-    docker_compose_subnet = click.prompt(click.style(subnet_message, fg='cyan'), default=subnet, type=str)
+    stack_name = click.prompt(
+        click.style(stack_name_message, fg='cyan'),
+        type=str,
+        default=existing_config.get('stack_name', default_stack_name),
+        hide_input=False,
+        value_proc=validate_and_transform_input
+    )
+    projects_local_path = path(
+        projects_local_path_message,
+        existing_config.get('projects', {}).get('path', default_projects_directory)
+    )
+    projects_repo_url = import_repo if import_repo else click.prompt(
+        click.style(projects_repo_url_message, fg='cyan'),
+        default=existing_config.get('projects', {}).get('repo_url', ''),
+        type=str
+    )
+    workspace_path = path(
+        workspace_message,
+        existing_config.get('workspace_path', default_wokspace_directory)
+    )
+    docker_compose_subnet = click.prompt(
+        click.style(subnet_message, fg='cyan'),
+        default=existing_config.get('docker_compose_subnet', subnet),
+        type=str
+    )
     database_answers = inquirer.prompt(questions)
     projects_config = {
         'path': projects_local_path,
@@ -180,25 +260,27 @@ def create_config():
     }
     db_config = {db: (db in database_answers['databases']) for db in db_choices}
     aider_config = configure_aider()
+    encryption_key = configure_encryption_key()
 
     # Update and save the new configuration data
-    config_yaml= {
+    config_yaml = {
         'workspace_path': workspace_path,
         'stack_name': stack_name,
         'projects': projects_config,
         'docker_compose_subnet': docker_compose_subnet,
         'databases': db_config,
-        'aider': aider_config
+        'aider': aider_config,
+        'encryption_key': encryption_key
     }
     save_config(config_yaml)
 
 
 @click.command()
-@click.pass_context  # Add this decorator to pass the context automatically
-def init(ctx):
+@click.option('--import', 'import_repo', help='Import projects manifests from a Git repository URL')
+@click.pass_context
+def init(ctx, import_repo):
     """Initialize configuration and set up docker-compose files."""
     check_or_create_directory(sys_directory)
-    check_or_create_directory(envs_directory)
 
     # Determine if the destroy command needs to be run
     if (sys_directory / 'docker-compose.yaml').exists() and (sys_directory / '.env').exists():
@@ -207,18 +289,19 @@ def init(ctx):
     arch = getarch()
     if config_file.exists():
         click.echo(click.style("Existing configuration found at: {}".format(config_file), fg='yellow'))
-        if click.confirm(click.style(EXISTING_CONFIGURATION_PROMPT, fg='magenta')):
+        if click.confirm(click.style("Would you like to replace the existing configuration?", fg='cyan')):
             # Prompt for new configuration details
-            create_config()
+            create_config(import_repo)
         else:
             click.echo(click.style("Keeping existing configuration.", fg='yellow'))
     else:
-        create_config()
+        create_config(import_repo)
 
     config = load_config()
     projects_repo_url = config['projects']['repo_url']
     projects_local_path = Path(config['projects']['path'])
     stack_name = config['stack_name']
+    encryption_key = config['encryption_key']
     docker_compose_subnet = config['docker_compose_subnet']
     mysql_enabled = config['databases']['mysql']
     postgresql_enabled = config['databases']['postgresql']
@@ -233,18 +316,25 @@ def init(ctx):
     if projects_local_path.exists() and any(projects_local_path.glob('*.yaml')):
         if projects_repo_url:
             if click.confirm(
-                    f"Project directory {styled_projects_local_path} exists with configuration files. Do you want to pull the latest updates from {styled_projects_repo_url}?"):
+                    f"Project directory {styled_projects_local_path} exists with project manifests. Do you want to pull the latest updates from {styled_projects_repo_url}?"):
                 clone_or_pull_repository(projects_repo_url, projects_local_path)
         else:
             click.echo(click.style(f"Found existing project directory at {styled_projects_local_path}", fg='yellow'))
     else:
         click.echo(f"No projects configuration found or {styled_projects_local_path} does not exist.")
         if projects_repo_url:
-            click.confirm(f"Would you like to clone the project repository {styled_projects_repo_url} into {styled_projects_local_path} ?")
             clone_or_pull_repository(projects_repo_url, projects_local_path)
         else:
             check_or_create_directory(projects_local_path)
             click.echo(click.style(f"Check {styled_DOCS_LINK_PROJECTS} on how to set up projects in {styled_projects_local_path}", fg='yellow'))
+
+    # Get existing projects config or empty dict if it doesn't exist
+    existing_projects = existing_config.get('projects', {})
+
+    projects_config = {
+        'path': existing_projects.get('path', projects_local_path),
+        'repo_url': existing_projects.get('repo_url', projects_repo_url)
+    }
 
     substitutions = {
         'stack_name': stack_name,

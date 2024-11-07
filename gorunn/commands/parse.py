@@ -42,7 +42,7 @@ def handle_dockerfile(project_path, dockerfile_template_path, substitutions):
         if dockerfile_checksum == existing_checksum:
             click.echo("Existing Dockerfile is up to date.")
         else:
-            if click.confirm(click.style(f"Dockerfile has changed. Replace {dockerfile_target}?", fg='red')):
+            if click.confirm(click.style(f"Dockerfile has changed. Replace {dockerfile_target}?", fg='cyan')):
                 with open(dockerfile_target, 'w') as f:
                     f.write(dockerfile_content)
                 click.echo("Dockerfile updated.")
@@ -70,6 +70,7 @@ def handle_env_file(project_config, project_path):
 
         substitutions = {
             'stack_name': stack_name,
+            'envs_directory': envs_directory,
             'name': project_config['name'],
             'endpoint': project_config['endpoint'],
             'app_key': generate_encryption_string(),
@@ -92,16 +93,11 @@ def parse(ctx):
         click.echo(click.style(NOT_SET_UP, fg='red', bold=True))
         raise click.Abort()
     ctx.invoke(destroy)
-    # If files exist, potentially destructive changes might be made, so confirm continuation
-    if not click.confirm("This will stop gorunn stack. Proceed?"):
-        click.echo("Operation cancelled by user.")
-        raise click.Abort()
-
     mounts_dir = sys_directory / 'mounts'
     remove_directory(mounts_dir)
     copy_directory(template_directory / 'mounts', mounts_dir)
 
-    click.echo(click.style("Parsing project files...", fg='blue', bold=True))
+    click.echo(click.style("Parsing project manifests...", fg='cyan', bold=True))
     config = load_config()
     workspace_path = Path(config['workspace_path'])
     stack_name = config['stack_name']
@@ -136,6 +132,7 @@ def parse(ctx):
         substitutions = {
             'stack_name': stack_name,
             'projects_local_path': projects_local_path,
+            'envs_directory': envs_directory,
             'name': project_config['name'],
             'env_vars': project_config.get('env_vars', False),
             'workspace_path': str(workspace_path),

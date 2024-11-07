@@ -58,7 +58,7 @@ def publish():
         for change in unstaged_changes:
             click.echo(f"  {change[3:]}")  # Correct slicing to display full filenames
 
-        if click.confirm("Do you want to add all changes to the staging area?", default=True):
+        if click.confirm(click.style("Do you want to add all changes to the staging area?", fg='cyan'), default=True):
             subprocess.run(['git', 'add', '.'], cwd=projects_directory, check=True)
 
     if subprocess.run(['git', 'diff', '--cached', '--quiet'], cwd=projects_directory).returncode != 0:
@@ -73,7 +73,7 @@ def publish():
     # Check if there are commits to push using a more robust check
     push_needed_result = subprocess.run(['git', 'log', '--branches', '--not', '--remotes'], cwd=projects_directory, capture_output=True, text=True)
     if push_needed_result.stdout.strip():
-        if click.confirm("Do you want to push the changes to live?", default=True):
+        if click.confirm(click.style("Do you want to push the changes to live?", fg='cyan'), default=True):
             push_result = subprocess.run(['git', 'push', 'origin', 'master'], cwd=projects_directory, capture_output=True, text=True)
             if push_result.returncode == 0:
                 click.echo(click.style("Changes pushed to live successfully.", fg='green'))

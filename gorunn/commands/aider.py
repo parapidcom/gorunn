@@ -1,9 +1,8 @@
 import os
 import subprocess
 import click
-import yaml
 from pathlib import Path
-from gorunn.config import config_file, aider_image, load_config
+from gorunn.config import aider_image, load_config
 
 @click.command(context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 @click.option('--app', required=True, help='The application where you want to run AI engineer.')
@@ -35,7 +34,6 @@ def aider(ctx, app, browser, no_browser, port):
 
         # Add environment variables to the command
         docker_command.extend(["--workdir", "/app"])
-
 
 
         docker_command.extend(["-e", f"{env_name}={llm_api_key}"])

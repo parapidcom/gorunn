@@ -45,7 +45,7 @@ def destroy(app,wipedb=None):
         click.echo(f"Failed to stop services: {e}", err=True)
     finally:
         if wipedb:
-            if click.confirm('Do you really want to wipe databases?'):
+            if click.confirm(click.style('Do you really want to wipe databases?', fg='cyan')):
                 click.echo("Wiping databases...")
                 shutil.rmtree(src_directory, ignore_errors=True)
                 click.echo(click.style("all databases are now wiped.", fg='green'))
