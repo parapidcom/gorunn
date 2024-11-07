@@ -9,7 +9,7 @@ from gorunn.commands.start import start
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from gorunn.config import sys_directory, config_file, template_directory, envs_directory, docker_template_directory, \
     db_username, db_password, load_config
-from gorunn.helpers import parse_template, getarch, generate_encryption_string, encrypt_file
+from gorunn.helpers import decrypt_file, parse_template, getarch, generate_encryption_string, encrypt_file
 from gorunn.commands.destroy import destroy
 from gorunn.translations import *
 
@@ -56,51 +56,64 @@ def handle_env_file(project_config, project_path):
     env_file_path = envs_directory / f"{project_config['name']}.env"
     encrypted_file_path = envs_directory / f"{project_config['name']}.env.encrypted"
 
-    # Only proceed if env file doesn't exist and project requires env vars
-    if not encrypted_file_path.exists() and project_config.get('env_vars', False):
-        # Determine the template based on the project type
-        env_template_path = template_directory / 'envs' / f"{project_config['type']}.env.tmpl"
-        env = Environment(loader=FileSystemLoader(env_template_path.parent), autoescape=select_autoescape(['html', 'xml', 'yaml']))
-        template = env.get_template(env_template_path.name)
+    # Check if we need to handle env vars for this project
+    if not project_config.get('env_vars', False):
+        return
 
-        try:
-            config = load_config()
-            stack_name = config['stack_name']
-            encryption_key = config.get('encryption_key')
+    try:
+        config = load_config()
+        stack_name = config['stack_name']
+        encryption_key = config.get('encryption_key')
 
-            if not encryption_key:
-                click.echo(click.style("No encryption key found in configuration, you need to set one before you can use encrypted environment files.", fg='red'))
-                raise click.Abort()
-        except:
-            click.echo(click.style(NOT_SET_UP, fg='red'))
-            click.Abort()
+        if not encryption_key:
+            click.echo(click.style("No encryption key found in configuration, you need to set one before you can use encrypted environment files.", fg='red'))
+            raise click.Abort()
 
-        substitutions = {
-            'stack_name': stack_name,
-            'envs_directory': envs_directory,
-            'name': project_config['name'],
-            'endpoint': project_config['endpoint'],
-            'app_key': generate_encryption_string(),
-            'database_username': db_username,
-            'database_password': db_password,
-        }
+        # If encrypted file exists but not the plain one, decrypt it first
+        if encrypted_file_path.exists() and not env_file_path.exists():
+            if decrypt_file(encrypted_file_path, encryption_key, env_file_path):
+                click.echo(click.style(f"Decrypted existing environment file for {project_config['name']}", fg='green'))
+            else:
+                click.echo(click.style(f"Failed to decrypt environment file for {project_config['name']}", fg='red'))
+                return
 
-        # Generate env content
-        env_content = template.render(**substitutions)
+        # If neither file exists, create new one
+        if not encrypted_file_path.exists() and not env_file_path.exists():
+            # Determine the template based on the project type
+            env_template_path = template_directory / 'envs' / f"{project_config['type']}.env.tmpl"
+            env = Environment(loader=FileSystemLoader(env_template_path.parent), autoescape=select_autoescape(['html', 'xml', 'yaml']))
+            template = env.get_template(env_template_path.name)
 
-        # First write to temporary .env file
-        with open(env_file_path, 'w') as env_file:
-            env_file.write(env_content)
+            substitutions = {
+                'stack_name': stack_name,
+                'envs_directory': envs_directory,
+                'name': project_config['name'],
+                'endpoint': project_config['endpoint'],
+                'app_key': generate_encryption_string(),
+                'database_username': db_username,
+                'database_password': db_password,
+            }
 
-        # Encrypt the file
-        if encrypt_file(env_file_path, encryption_key, encrypted_file_path):
-            click.echo(click.style(f"Environment file created and encrypted: {encrypted_file_path}", fg='green'))
-            # Remove the temporary unencrypted file
-            env_file_path.unlink()
+            # Generate env content
+            env_content = template.render(**substitutions)
+
+            # First write to temporary .env file
+            with open(env_file_path, 'w') as env_file:
+                env_file.write(env_content)
+
+            # Encrypt the file
+            if encrypt_file(env_file_path, encryption_key, encrypted_file_path):
+                click.echo(click.style(f"Environment file created and encrypted: {encrypted_file_path}", fg='green'))
+                # Remove the temporary unencrypted file
+                env_file_path.unlink()
+            else:
+                click.echo(click.style(f"Failed to encrypt environment file for {project_config['name']}", fg='red'))
         else:
-            click.echo(click.style(f"Failed to encrypt environment file for {project_config['name']}", fg='red'))
-    else:
-        click.echo(click.style(f"Environment file exists, skipping: {encrypted_file_path}", fg='green'))
+            click.echo(click.style(f"Environment file exists, skipping: {encrypted_file_path}", fg='green'))
+
+    except Exception as e:
+        click.echo(click.style(f"Error handling environment file: {str(e)}", fg='red'))
+        raise click.Abort()
 
 
 @click.command()

@@ -11,7 +11,6 @@ tbd
 ## Configfurations
 
 All params are available in container as environment variables.
-- *Environment file is located in your `~/gorunn/envs/`. Feel free to edit it to your liking*
 - *CLI generates **Dockerfile.gorunn** in project repo. You can commit that file and update it as per need with additional packages. It is used to build local image.
 
 Services are accessible
