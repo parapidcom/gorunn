@@ -7,10 +7,9 @@ from gorunn.config import aider_image, load_config
 @click.command(context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 @click.option('--app', required=True, help='The application where you want to run AI engineer.')
 @click.option('--browser', is_flag=True, help='Enable browser mode')
-@click.option('--no-browser', is_flag=True, help='Disable browser mode')
 @click.option('--port', default=8501, help='Port to run the application on')
 @click.pass_context
-def aider(ctx, app, browser, no_browser, port):
+def aider(ctx, app, browser, port):
     """Run the Aider AI engineer."""
     config = load_config()
     workspace_path = Path(config['workspace_path'])
@@ -32,7 +31,6 @@ def aider(ctx, app, browser, no_browser, port):
             "-v", f"{home_directory}/.gitconfig:/root/.gitconfig",
         ]
 
-        # Add environment variables to the command
         docker_command.extend(["--workdir", "/app"])
 
 
@@ -44,12 +42,10 @@ def aider(ctx, app, browser, no_browser, port):
         # Handle browser flag
         if browser:
             docker_command.append("--browser")
-        elif no_browser:
-            docker_command.append("--no-browser")
 
         # Filter out our script's arguments and pass the rest to the Docker container
         aider_args = [arg for arg in ctx.args if
-                      arg not in ('--app', app, '--browser', '--no-browser', '--port', str(port))]
+                      arg not in ('--app', app, '--browser', '--port', str(port))]
         docker_command.extend(aider_args)
 
         # Execute Docker run command
