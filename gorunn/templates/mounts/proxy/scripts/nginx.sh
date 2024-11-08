@@ -14,7 +14,7 @@ for project in /projects/*.yaml; do
   app=$(basename "$project" .yaml)
 
   # Use `yq` to extract values directly from the YAML file
-  export name=$(yq e '.name' "$project")
+  export name=$app
   export type=$(yq e '.type' "$project")
   export endpoint=$(yq e '.endpoint' "$project")
   export server=$(yq e '.server' "$project")
