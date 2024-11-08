@@ -185,3 +185,18 @@ services:
     networks:
       {{ stack_name }}_network:
   {% endif %}
+  {% if rabbitmq %}
+  {{ stack_name }}-rabbitmq:
+    container_name: {{ stack_name }}-rabbitmq
+    image: rabbitmq:3.8-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ${DB_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${DB_PASSWORD}
+    ports:
+      - "25672:5672"
+      - "15672:15672"
+    volumes:
+      - ./src/rabbitmq/local-data:/var/lib/rabbitmq
+    networks:
+      {{ stack_name }}_network:
+  {% endif %}
