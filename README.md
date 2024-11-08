@@ -128,7 +128,7 @@ $HOME/gorunn/
 - **type**: node (type of the project, one of: node, php, python)
 - **version**: "20" (version of the platform being used, e.g. node version, php version, python version)
 - **endpoint**: myreact.local.gorunn.io (optional, if defined, the CLI will create a virtual host on the local proxy for it. The endpoint must be in the form of `%s.local.gorunn.io`)
-- **env_vars**: true (boolean, if true, the CLI will load it from `~/gorunn/envs/myapp1.env` (if it does not exist, it will create a new file from a template))
+- **env_vars**: true (boolean, if true, the CLI will load it from manifests directory (if it does not exist, it will create a new file from a template))
 - **start_command**: npm run dev (command used to start the server)
 - **listen_port**: 3000 (port on which your local server will listen, allowing the proxy to forward to it as upstream)
 - **build_commands**: (list of commands necessary for project bootstrap. These are called with the `gorunn build --app app_name` command)
