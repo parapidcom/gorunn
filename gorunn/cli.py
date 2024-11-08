@@ -12,7 +12,8 @@ from gorunn.commands import (init,
                              trust, info,
                              projects,
                              version,
-                             aider)
+                             aider,
+                             status)
 
 @click.group()
 def cli():
@@ -34,6 +35,7 @@ cli.add_command(info.info)
 cli.add_command(projects.projects)
 cli.add_command(version.version)
 cli.add_command(aider.aider)
+cli.add_command(status.status)
 
 if __name__ == '__main__':
     cli()

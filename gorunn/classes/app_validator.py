@@ -1,5 +1,5 @@
 import click
-
+from gorunn.config import supported_services
 from gorunn.helpers import load_available_projects
 # Validator function for the click callbacks to return avail apps
 class AppValidator:
@@ -9,7 +9,7 @@ class AppValidator:
     def validate_apps(self, app=None, include_services=False):
         if include_services:
             # Append additional services to the available projects list
-            self.available_projects.extend(["proxy", "mysql", "opensearch", "postgresql", "chroma", "redis"])
+            self.available_projects.extend(supported_services)
 
         if app:
             if app != "all" and app not in self.available_projects:

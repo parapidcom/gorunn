@@ -77,6 +77,17 @@ services:
     networks:
       {{ stack_name }}_network:
   {% endif %}
+  {% if memcached %}
+  {{ stack_name }}-memcached:
+    container_name: {{ stack_name }}-memcached
+    image: memcached:1.6
+    volumes:
+      - ./src/memcached/local-data:/data
+    ports:
+      - 21211:11211
+    networks:
+      {{ stack_name }}_network:
+  {% endif %}
   {% if chroma %}
   {{ stack_name }}-chroma:
     container_name: {{ stack_name }}-chroma
@@ -91,7 +102,7 @@ services:
   {% if opensearch %}
   {{ stack_name }}-opensearch:
     container_name: {{ stack_name }}-opensearch
-    image: opensearchstaging/opensearch:1.1.0-multi-test
+    image: opensearchproject/opensearch:2.18.0
     volumes:
         - ./src/opensearch/local-data:/usr/share/opensearch/data
     environment:
@@ -100,6 +111,9 @@ services:
         - bootstrap.memory_lock=true
         - plugins.security.disabled=true
         - "OPENSEARCH_JAVA_OPTS=-Xms128m -Xmx512m"
+        - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${DB_ROOT_PASSWORD}
+        - DISABLE_INSTALL_DEMO_CONFIG=true
+        - plugins.security.ssl.http.enabled=false
     ulimits:
       memlock:
         soft: -1
@@ -111,4 +125,33 @@ services:
         - 19200:9200
     networks:
         {{ stack_name }}_network:
+  {% endif %}
+  {% if mongodb %}
+  {{ stack_name }}-mongo:
+    image: mongo:8
+    container_name: {{ stack_name }}-mongo
+    restart: always
+    ports:
+      - "37017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./src/mongodb/local-data:/data/db
+    networks:
+      {{ stack_name }}_network:
+
+  {{ stack_name }}mongo-express:
+    image: mongo-express
+    container_name: {{ stack_name }}-mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${DB_PASSWORD}
+      ME_CONFIG_MONGODB_URL: mongodb://${DB_USERNAME}:${DB_PASSWORD}@{{ stack_name }}-mongo:27017/
+      ME_CONFIG_BASICAUTH: false
+    networks:
+      {{ stack_name }}_network:
   {% endif %}

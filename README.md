@@ -39,7 +39,7 @@ When you run gorunn init, you'll be prompted to configure:
 - **Projects local path**. This is where your project manifests will be stored.
 - **Workspace path**. This is where your application local directory will be created or cloned.
 - **Docker network subnet**. This is the subnet for the Docker network. Leave empty to use default if you don't know what it is, change only in case you have conflict with your existing docker compose network subnet.
-- **Database selection** (MySQL, PostgreSQL, Redis, Chroma, OpenSearch). This is the databases you want to use.
+- **Service selection** (MySQL, PostgreSQL, Redis, Memcached,Chroma, OpenSearch, MongoDB). These are the services you want to use.
 - **Encryption key for environment variables**. This is the key used to encrypt your environment variables so that you can safely push them to repo together with project manifests.
 - **Aider AI assistant**. You will be prompted to enable [Aider](https://aider.chat) AI assistant for your project. If you want to use it, prepare your OpenAI API or Anthropic API key.
 You can specify project manifest directory as an option:
@@ -92,7 +92,7 @@ aider: (enable Aider AI assistant for the stack)
   api_key: your_llm_api_key
   enabled: true|false
   llm: OpenAI|Claude
-databases: (enable one or more services for the stack)
+services: (enable one or more services for the stack)
   chroma: true|false
   mysql: true|false
   opensearch: true|false

@@ -2,12 +2,11 @@ import click
 from pathlib import Path
 import yaml
 import subprocess
-import secrets, base64
 import hashlib
-from gorunn.commands.init import copy_directory, remove_directory
+from gorunn.utils import copy_directory, remove_directory
 from gorunn.commands.start import start
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from gorunn.config import sys_directory, config_file, template_directory, envs_directory, docker_template_directory, \
+from gorunn.config import sys_directory, template_directory, envs_directory, docker_template_directory, \
     db_username, db_password, load_config
 from gorunn.helpers import decrypt_file, parse_template, getarch, generate_encryption_string, encrypt_file
 from gorunn.commands.destroy import destroy

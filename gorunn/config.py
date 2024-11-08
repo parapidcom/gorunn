@@ -41,6 +41,9 @@ docker_template_directory = template_directory / 'docker'
 docker_compose_template = docker_template_directory / 'docker-compose.yaml.tmpl'
 env_template = docker_template_directory / '.env.tmpl'
 
+# Supported services
+supported_services = ['mysql', 'postgresql', 'redis', 'chroma', 'opensearch', 'mongodb']
+
 def load_config():
     """Load the main configuration file or return None if it doesn't exist."""
     if not os.path.exists(config_file):

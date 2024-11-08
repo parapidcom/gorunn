@@ -11,9 +11,11 @@ import secrets
 import base64
 
 from gorunn.config import subnet, env_template, sys_directory, config_file, docker_compose_template, template_directory, \
-    envs_directory, db_username, db_password, db_root_password, load_config, default_projects_directory, default_wokspace_directory, default_stack_name
+    supported_services, db_username, db_password, db_root_password, load_config, default_projects_directory, default_wokspace_directory, default_stack_name
 from gorunn.commands.destroy import destroy
-from gorunn.helpers import parse_template, getarch
+from gorunn.commands.parse import parse
+from gorunn.utils import copy_directory, remove_directory
+from gorunn.helpers import getarch, parse_template
 from gorunn.translations import *
 
 
@@ -61,17 +63,6 @@ def check_or_create_directory(directory_path):
         except Exception as e:
             click.echo(click.style(f"Failed to create directory: {str(e)}", fg='red'))
             raise click.Abort()
-
-
-def remove_directory(directory_path):
-    """Remove the directory if it exists."""
-    if directory_path.exists():
-        shutil.rmtree(directory_path)
-
-
-def copy_directory(source, destination):
-    """Copy entire directory from source to destination."""
-    shutil.copytree(source, destination)
 
 
 def copy_file(source, destination, overwrite=False):
@@ -220,12 +211,12 @@ def create_config(import_repo):
     projects_local_path_message = f"Enter full path to the directory where your project stack is or should be pulled from repo"
     workspace_message = f"Enter the workspace path for the projects"
     subnet_message = f"Which subnet to use for Docker Compose network? Leave empty to use default"
-    db_choices = ['mysql', 'postgresql', 'redis', 'chroma', 'opensearch']
+    service_choices = supported_services
     questions = [
-        inquirer.Checkbox('databases',
-                          message="Select databases to use(multiple choices possible)",
-                          choices=db_choices,
-                          default=[db for db in db_choices if existing_config.get('databases', {}).get(db, False)]
+        inquirer.Checkbox('services',
+                          message="Select services to use(multiple choices possible)",
+                          choices=service_choices,
+                          default=[service for service in service_choices if existing_config.get('services', {}).get(service, False)]
                           ),
     ]
     stack_name = click.prompt(
@@ -253,12 +244,12 @@ def create_config(import_repo):
         default=existing_config.get('docker_compose_subnet', subnet),
         type=str
     )
-    database_answers = inquirer.prompt(questions)
+    service_answers = inquirer.prompt(questions)
     projects_config = {
         'path': projects_local_path,
         'repo_url': projects_repo_url
     }
-    db_config = {db: (db in database_answers['databases']) for db in db_choices}
+    service_config = {service: (service in service_answers['services']) for service in service_choices}
     aider_config = configure_aider()
     encryption_key = configure_encryption_key()
 
@@ -268,7 +259,7 @@ def create_config(import_repo):
         'stack_name': stack_name,
         'projects': projects_config,
         'docker_compose_subnet': docker_compose_subnet,
-        'databases': db_config,
+        'services': service_config,
         'aider': aider_config,
         'encryption_key': encryption_key
     }
@@ -277,8 +268,9 @@ def create_config(import_repo):
 
 @click.command()
 @click.option('--import', 'import_repo', help='Import projects manifests from a Git repository URL')
+@click.option('--parse', 'run_parse', help='Run parse after init', is_flag=True)
 @click.pass_context
-def init(ctx, import_repo):
+def init(ctx, import_repo, run_parse):
     """Initialize configuration and set up docker-compose files."""
     check_or_create_directory(sys_directory)
 
@@ -298,16 +290,18 @@ def init(ctx, import_repo):
         create_config(import_repo)
 
     config = load_config()
-    projects_repo_url = config['projects']['repo_url']
-    projects_local_path = Path(config['projects']['path'])
-    stack_name = config['stack_name']
-    encryption_key = config['encryption_key']
-    docker_compose_subnet = config['docker_compose_subnet']
-    mysql_enabled = config['databases']['mysql']
-    postgresql_enabled = config['databases']['postgresql']
-    redis_enabled = config['databases']['redis']
-    chroma_enabled = config['databases']['chroma']
-    opensearch_enabled = config['databases']['opensearch']
+    projects_repo_url = config.get('projects', {}).get('repo_url', '')
+    projects_local_path = Path(config.get('projects', {}).get('path', default_projects_directory))
+    stack_name = config.get('stack_name', default_stack_name)
+    encryption_key = config.get('encryption_key', '')
+    docker_compose_subnet = config.get('docker_compose_subnet', subnet)
+    mysql_enabled = config.get('services', {}).get('mysql', True)
+    postgresql_enabled = config.get('services', {}).get('postgresql', False)
+    redis_enabled = config.get('services', {}).get('redis', True)
+    memcached_enabled = config.get('services', {}).get('memcached', False)
+    chroma_enabled = config.get('services', {}).get('chroma', False)
+    opensearch_enabled = config.get('services', {}).get('opensearch', False)
+    mongodb_enabled = config.get('services', {}).get('mongodb', False)
 
 
     styled_DOCS_LINK_PROJECTS = click.style(DOCS_LINK_PROJECTS, fg='blue')
@@ -344,6 +338,8 @@ def init(ctx, import_repo):
         'redis': redis_enabled,
         'chroma': chroma_enabled,
         'opensearch': opensearch_enabled,
+        'mongodb': mongodb_enabled,
+        'memcached': memcached_enabled,
         'docker_compose_subnet': docker_compose_subnet,
         'database_username': db_username,
         'database_password': db_password,
@@ -364,6 +360,8 @@ def init(ctx, import_repo):
     click.echo(click.style("System files and directories setup completed.", fg='green'))
     click.echo(click.style("Adding self signed certificate to Apple Keychain, please authorize it.", fg='green'))
     ctx.invoke(trust)
+    if run_parse:
+        ctx.invoke(parse)
 
 if __name__ == "__main__":
     init()
