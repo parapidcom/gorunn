@@ -45,13 +45,13 @@ When you run gorunn init, you'll be prompted to configure:
 You can specify project manifest directory as an option:
 
 ```bash
-gorunn init --import /path/to/your/projects-manifests
+gorunn init --parse --import /path/to/your/projects-manifests
 ```
 
 or you can specify project manifest repository URL if you have one:
 
 ```bash
-gorunn init --import git@github.com:yourorg/projects-manifests.git
+gorunn init --parse --import git@github.com:yourorg/projects-manifests.git
 ```
 
 #### Example Stack
@@ -59,7 +59,6 @@ Optionally you can use our example project stack with `react`, `laravel` and `dj
 ```bash
 gorunn init --import https://github.com/parapidcom/gorunn-project-manifests.git
 ```
-⚠️ **Use this key for example environment variables decryption**: `Iourmut6ww9u4T6e4DZ35wJpRKQqdQH6iz0m2TsvxfU=`
 ### Parse the project manifests
 ```bash
 gorunn parse
