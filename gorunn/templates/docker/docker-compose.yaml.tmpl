@@ -51,16 +51,16 @@ services:
     networks:
       {{ stack_name }}_network:
   {% endif %}
-  {% if postgresql %}
-  {{ stack_name }}-postgresql:
-    container_name: {{ stack_name }}-postgresql
-    image: postgres
+  {% if postgres %}
+  {{ stack_name }}-postgres:
+    container_name: {{ stack_name }}-postgres
+    image: postgres:13
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - ./src/postgresql/local-data:/var/lib/postgresql/data
-      - ./mounts/postgresql/:/docker-entrypoint-initdb.d
+      - ./src/postgres/local-data:/var/lib/postgres/data
+      - ./mounts/postgres/:/docker-entrypoint-initdb.d
     ports:
       - '15432:5432'
     networks:
@@ -152,6 +152,36 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${DB_PASSWORD}
       ME_CONFIG_MONGODB_URL: mongodb://${DB_USERNAME}:${DB_PASSWORD}@{{ stack_name }}-mongo:27017/
       ME_CONFIG_BASICAUTH: false
+    networks:
+      {{ stack_name }}_network:
+  {% endif %}
+  {% if kafka %}
+  {{ stack_name }}-kafka:
+    container_name: {{ stack_name }}-kafka
+    image: apache/kafka:3.9.0
+    ports:
+      - "29092:9092"
+      - "29093:9093"
+    environment:
+      # Listeners
+      KAFKA_LISTENERS: BROKER://{{ stack_name }}-kafka:9092,CONTROLLER://{{ stack_name }}-kafka:9093,EXTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: BROKER://{{ stack_name }}-kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: BROKER:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
+
+      # KRaft configuration
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@{{ stack_name }}-kafka:9093'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+
+      # Other settings
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      CLUSTER_ID: {{ stack_name }}-kafka
+    volumes:
+      - ./src/kafka/local-data:/var/lib/kafka/data
     networks:
       {{ stack_name }}_network:
   {% endif %}

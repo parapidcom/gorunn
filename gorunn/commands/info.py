@@ -33,7 +33,11 @@ def info():
             with open(project_file, 'r') as file:
                 project = yaml.safe_load(file)
                 click.echo(click.style(f"Project Name: {project['name']}", fg='green'))
-                click.echo(f"Endpoint: https://{project['endpoint']}")
+                endpoint = project['endpoint']
+                if endpoint:
+                    click.echo(f"Endpoint: https://{endpoint}")
+                else:
+                    click.echo(f"Endpoint: Not set")
                 click.echo(f"Type: {project['type']}")
                 click.echo(f"Version: {project['version']}")
                 container_status = get_docker_status(f"{stack_name}-{project['name']}")

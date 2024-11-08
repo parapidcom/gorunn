@@ -3,7 +3,7 @@ from pathlib import Path
 import click
 import subprocess
 import yaml
-from gorunn.config import sys_directory, config_file, load_config
+from gorunn.config import sys_directory, load_config
 from gorunn.helpers import check_docker
 from gorunn.classes.app_validator import AppValidator
 from gorunn.translations import *

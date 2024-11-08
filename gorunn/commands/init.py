@@ -296,13 +296,13 @@ def init(ctx, import_repo, run_parse):
     encryption_key = config.get('encryption_key', '')
     docker_compose_subnet = config.get('docker_compose_subnet', subnet)
     mysql_enabled = config.get('services', {}).get('mysql', True)
-    postgresql_enabled = config.get('services', {}).get('postgresql', False)
+    postgres_enabled = config.get('services', {}).get('postgres', False)
     redis_enabled = config.get('services', {}).get('redis', True)
     memcached_enabled = config.get('services', {}).get('memcached', False)
     chroma_enabled = config.get('services', {}).get('chroma', False)
     opensearch_enabled = config.get('services', {}).get('opensearch', False)
     mongodb_enabled = config.get('services', {}).get('mongodb', False)
-
+    kafka_enabled = config.get('services', {}).get('kafka', False)
 
     styled_DOCS_LINK_PROJECTS = click.style(DOCS_LINK_PROJECTS, fg='blue')
     styled_projects_local_path = click.style(projects_local_path, fg='red')
@@ -334,11 +334,12 @@ def init(ctx, import_repo, run_parse):
         'stack_name': stack_name,
         'projects_local_path': projects_local_path,
         'mysql': mysql_enabled,
-        'postgresql': postgresql_enabled,
+        'postgres': postgres_enabled,
         'redis': redis_enabled,
         'chroma': chroma_enabled,
         'opensearch': opensearch_enabled,
         'mongodb': mongodb_enabled,
+        'kafka': kafka_enabled,
         'memcached': memcached_enabled,
         'docker_compose_subnet': docker_compose_subnet,
         'database_username': db_username,
