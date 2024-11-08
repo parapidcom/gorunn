@@ -50,10 +50,10 @@ def handle_dockerfile(project_path, dockerfile_template_path, substitutions):
             f.write(dockerfile_content)
         click.echo("Dockerfile created.")
 
-def handle_env_file(project_config, project_path):
+def handle_env_file(project_config, project_path, project_file):
     """Generate or update environment file for a project if required."""
-    env_file_path = envs_directory / f"{project_config['name']}.env"
-    encrypted_file_path = envs_directory / f"{project_config['name']}.env.encrypted"
+    env_file_path = envs_directory / f"{project_file.stem}.env"
+    encrypted_file_path = envs_directory / f"{project_file.stem}.env.encrypted"
 
     # Check if we need to handle env vars for this project
     if not project_config.get('env_vars', False):
@@ -71,9 +71,9 @@ def handle_env_file(project_config, project_path):
         # If encrypted file exists but not the plain one, decrypt it first
         if encrypted_file_path.exists() and not env_file_path.exists():
             if decrypt_file(encrypted_file_path, encryption_key, env_file_path):
-                click.echo(click.style(f"Decrypted existing environment file for {project_config['name']}", fg='green'))
+                click.echo(click.style(f"Decrypted existing environment file for {project_file.stem}", fg='green'))
             else:
-                click.echo(click.style(f"Failed to decrypt environment file for {project_config['name']}", fg='red'))
+                click.echo(click.style(f"Failed to decrypt environment file for {project_file.stem}", fg='red'))
                 return
 
         # If neither file exists, create new one
@@ -86,7 +86,7 @@ def handle_env_file(project_config, project_path):
             substitutions = {
                 'stack_name': stack_name,
                 'envs_directory': envs_directory,
-                'name': project_config['name'],
+                'name': project_file.stem,
                 'endpoint': project_config['endpoint'],
                 'app_key': generate_encryption_string(),
                 'database_username': db_username,
@@ -106,7 +106,7 @@ def handle_env_file(project_config, project_path):
                 # Remove the temporary unencrypted file
                 env_file_path.unlink()
             else:
-                click.echo(click.style(f"Failed to encrypt environment file for {project_config['name']}", fg='red'))
+                click.echo(click.style(f"Failed to encrypt environment file for {project_file.stem}", fg='red'))
         else:
             click.echo(click.style(f"Environment file exists, skipping: {encrypted_file_path}", fg='green'))
 
@@ -145,11 +145,11 @@ def parse(ctx):
         with open(project_file) as f:
             project_config = yaml.safe_load(f)
 
-        project_path = workspace_path / project_config['name']
+        project_path = workspace_path / project_file.stem
 
         dockerfile_template_path = docker_template_directory / 'dockerfiles' / project_config['type'] / 'Dockerfile.tmpl'
 
-        click.echo(click.style(f"Parsing project: {project_config['name']}", fg='green'))
+        click.echo(click.style(f"Parsing project: {project_file.stem}", fg='green'))
         if not project_path.exists():
             try:
                 click.echo(click.style(f"Cloning repository {project_config['git_repo']}...", fg='yellow'))
@@ -161,11 +161,11 @@ def parse(ctx):
 
         substitutions = {
             'stack_name': stack_name,
-            'projects_local_path': projects_local_path,
             'envs_directory': envs_directory,
-            'name': project_config['name'],
+            'name': project_file.stem,
             'env_vars': project_config.get('env_vars', False),
             'workspace_path': str(workspace_path),
+            'projects_local_path': str(projects_local_path),
             'server': project_config.get('server', 'dev'),
             'listen_port': project_config.get('listen_port', ''),
             'version': project_config.get('version', '0'),
@@ -176,9 +176,9 @@ def parse(ctx):
         }
 
         docker_compose_template_path = docker_template_directory / f"docker-compose.{project_config['type']}.yaml.tmpl"
-        docker_compose_target_path = sys_directory / f"docker-compose.{project_config['name']}.yaml"
+        docker_compose_target_path = sys_directory / f"docker-compose.{project_file.stem}.yaml"
         # Generate environment file if necessary
-        handle_env_file(project_config, project_path)
+        handle_env_file(project_config, project_path, project_file)
         # Generate dockerfiles
         handle_dockerfile(project_path, dockerfile_template_path, substitutions)
 

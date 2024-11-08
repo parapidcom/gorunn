@@ -34,7 +34,7 @@ def build(app):
         for project_file in projects_directory.glob("*.yaml"):
             with open(project_file, 'r') as file:
                 project_config = yaml.safe_load(file)
-            app_name = project_config['name']
+            app_name = project_file.stem
             _type = project_config['type']
             if 'build_commands' not in project_config:
                 click.echo(click.style(f"No build commands found for {app_name}", fg='yellow'))

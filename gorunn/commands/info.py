@@ -32,7 +32,7 @@ def info():
         for project_file in project_files:
             with open(project_file, 'r') as file:
                 project = yaml.safe_load(file)
-                click.echo(click.style(f"Project Name: {project['name']}", fg='green'))
+                click.echo(click.style(f"Project Name: {project_file.stem}", fg='green'))
                 endpoint = project['endpoint']
                 if endpoint:
                     click.echo(f"Endpoint: https://{endpoint}")
@@ -40,7 +40,7 @@ def info():
                     click.echo(f"Endpoint: Not set")
                 click.echo(f"Type: {project['type']}")
                 click.echo(f"Version: {project['version']}")
-                container_status = get_docker_status(f"{stack_name}-{project['name']}")
+                container_status = get_docker_status(f"{stack_name}-{project_file.stem}")
                 click.echo(f"Docker Status: {container_status}")
                 click.echo("---")
     except:

@@ -65,27 +65,25 @@ def check_port(port, project):
 
 # Get all stack projects and its names
 def get_project_names():
-    """Get all project names."""
+    """Get all project names from manifest filenames."""
     project_names = []
     config = load_config()
     projects_directory = Path(config['projects']['path'])
     for project_file in Path(projects_directory).glob('*.yaml'):
-        with open(project_file, 'r') as f:
-            project_config = yaml.safe_load(f)
-            project_names.append(project_config['name'])
+        project_names.append(project_file.stem)
     return project_names
 
 # Get stack projects that has `has_env` set, meaning those have env file
 def get_projects_with_env_variables():
-    """Get all project names."""
+    """Get projects that have env_vars enabled."""
     project_names = []
     config = load_config()
     projects_directory = Path(config['projects']['path'])
     for project_file in Path(projects_directory).glob('*.yaml'):
         with open(project_file, 'r') as f:
             project_config = yaml.safe_load(f)
-            if project_config['env_vars']:
-                project_names.append(project_config['name'])
+            if project_config.get('env_vars', False):
+                project_names.append(project_file.stem)
     return project_names
 
 # Parse template to final config
@@ -118,10 +116,8 @@ def load_available_projects():
     else:
         projects_directory = Path(config['projects']['path'])
         for project_file in projects_directory.glob('*.yaml'):
-            with open(project_file, 'r') as f:
-                project_config = yaml.safe_load(f)
-            available_projects.append(project_config['name'])
-        return available_projects
+            available_projects.append(project_file.stem)
+    return available_projects
 
 
 def generate_encryption_string():
