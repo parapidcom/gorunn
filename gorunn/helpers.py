@@ -201,3 +201,14 @@ def handle_encrypted_envs(config):
 
     except Exception as e:
         click.echo(click.style(f"Error handling encrypted environment files: {str(e)}", fg='red'))
+
+
+def check_or_create_directory(directory_path):
+    """Ensure the directory exists, create if not."""
+    path = Path(directory_path)
+    if not path.exists():
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            click.echo(click.style(f"Failed to create directory: {str(e)}", fg='red'))
+            raise click.Abort()

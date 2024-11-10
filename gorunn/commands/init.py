@@ -15,7 +15,7 @@ from gorunn.config import subnet, env_template, sys_directory, config_file, dock
 from gorunn.commands.destroy import destroy
 from gorunn.commands.parse import parse
 from gorunn.utils import copy_directory, remove_directory
-from gorunn.helpers import getarch, parse_template
+from gorunn.helpers import getarch, parse_template, check_or_create_directory
 from gorunn.translations import *
 
 
@@ -54,15 +54,7 @@ def clone_or_pull_repository(repo_url, directory):
             click.echo(click.style(f"Failed to clone repository: {str(e)}", fg='red'))
 
 
-def check_or_create_directory(directory_path):
-    """Ensure the directory exists, create if not."""
-    path = Path(directory_path)
-    if not path.exists():
-        try:
-            path.mkdir(parents=True, exist_ok=True)
-        except Exception as e:
-            click.echo(click.style(f"Failed to create directory: {str(e)}", fg='red'))
-            raise click.Abort()
+
 
 
 def copy_file(source, destination, overwrite=False):
@@ -292,6 +284,8 @@ def init(ctx, import_repo, run_parse):
     config = load_config()
     projects_repo_url = config.get('projects', {}).get('repo_url', '')
     projects_local_path = Path(config.get('projects', {}).get('path', default_projects_directory))
+    envs_directory = projects_local_path / 'env'
+    check_or_create_directory(envs_directory)
     stack_name = config.get('stack_name', default_stack_name)
     encryption_key = config.get('encryption_key', '')
     docker_compose_subnet = config.get('docker_compose_subnet', subnet)
