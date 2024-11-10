@@ -45,8 +45,8 @@ def build(app):
                 click.echo(click.style(f"Running command for {app_name}: {command}", fg='blue'))
                 execute_docker_command(service_name, _type, command)
     else:
-        config=load_config()
-        project_file_path = config['projects']['path'] / f"{app}.yaml"
+        config = load_config()
+        project_file_path = Path(config['projects']['path']) / f"{app}.yaml"
 
         if not project_file_path.exists():
             click.echo(click.style(f"Project configuration not found for {app}", fg='red'))
