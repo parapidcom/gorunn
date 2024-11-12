@@ -8,7 +8,8 @@
 Website: https://gorunn.io
 
 ## Minimum Requirements:
-- Python 3.9+
+- Python 3.10+
+- [Pipx](https://github.com/pypa/pipx)
 - Docker and Docker Compose
 - MacOS (currently supported OS)
 
@@ -20,7 +21,7 @@ Website: https://gorunn.io
 ## Installation
 
 ```bash
-pip install gorunn
+pipx install gorunn
 ```
 
 ## Quick Start
