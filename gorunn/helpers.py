@@ -212,3 +212,11 @@ def check_or_create_directory(directory_path):
         except Exception as e:
             click.echo(click.style(f"Failed to create directory: {str(e)}", fg='red'))
             raise click.Abort()
+
+def check_git_installed():
+    """Check if Git is installed."""
+    try:
+        subprocess.run(["git", "--version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        click.echo(click.style("Git is not installed. Please install Git to use gorunn.", fg='red'))
+        sys.exit(1)

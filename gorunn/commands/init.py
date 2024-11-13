@@ -15,7 +15,7 @@ from gorunn.config import subnet, env_template, sys_directory, config_file, dock
 from gorunn.commands.destroy import destroy
 from gorunn.commands.parse import parse
 from gorunn.utils import copy_directory, remove_directory
-from gorunn.helpers import getarch, parse_template, check_or_create_directory
+from gorunn.helpers import getarch, parse_template, check_or_create_directory, check_git_installed
 from gorunn.translations import *
 
 
@@ -264,6 +264,7 @@ def create_config(import_repo):
 @click.pass_context
 def init(ctx, import_repo, run_parse):
     """Initialize configuration and set up docker-compose files."""
+    check_git_installed()  # Ensure Git is installed before proceeding
     check_or_create_directory(sys_directory)
 
     # Determine if the destroy command needs to be run
@@ -285,7 +286,6 @@ def init(ctx, import_repo, run_parse):
     projects_repo_url = config.get('projects', {}).get('repo_url', '')
     projects_local_path = Path(config.get('projects', {}).get('path', default_projects_directory))
     envs_directory = projects_local_path / 'env'
-    check_or_create_directory(envs_directory)
     stack_name = config.get('stack_name', default_stack_name)
     encryption_key = config.get('encryption_key', '')
     docker_compose_subnet = config.get('docker_compose_subnet', subnet)
@@ -317,6 +317,8 @@ def init(ctx, import_repo, run_parse):
             check_or_create_directory(projects_local_path)
             click.echo(click.style(f"Check {styled_DOCS_LINK_PROJECTS} on how to set up projects in {styled_projects_local_path}", fg='yellow'))
 
+    # Create envs directory
+    check_or_create_directory(envs_directory)
     # Get existing projects config or empty dict if it doesn't exist
     existing_projects = existing_config.get('projects', {})
 
@@ -355,7 +357,7 @@ def init(ctx, import_repo, run_parse):
     copy_directory(template_directory / 'mounts', mounts_dir)
 
     click.echo(click.style("System files and directories setup completed.", fg='green'))
-    click.echo(click.style("Adding self signed certificate to Apple Keychain, please authorize it.", fg='green'))
+    click.echo(click.style("Adding self signed certificate to system's trusted store, please authorize it.", fg='green'))
     ctx.invoke(trust)
     if run_parse:
         ctx.invoke(parse)

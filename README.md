@@ -11,7 +11,9 @@ Website: https://gorunn.io
 - Python 3.10+
 - [Pipx](https://github.com/pypa/pipx)
 - Docker and Docker Compose
-- MacOS (currently supported OS)
+- OS:
+  - MacOS (Tested on Sequoia 15.0.1)
+  - Ubuntu (tested on 24.04)
 
 ## Supported languages
 - Python

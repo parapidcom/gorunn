@@ -8,7 +8,7 @@ from gorunn.commands.start import start
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from gorunn.config import sys_directory, template_directory, envs_directory, docker_template_directory, \
     db_username, db_password, load_config
-from gorunn.helpers import decrypt_file, parse_template, getarch, generate_encryption_string, encrypt_file
+from gorunn.helpers import decrypt_file, parse_template, getarch, generate_encryption_string, encrypt_file, check_git_installed
 from gorunn.commands.destroy import destroy
 from gorunn.translations import *
 
@@ -119,6 +119,7 @@ def handle_env_file(project_config, project_path, project_file):
 @click.pass_context
 def parse(ctx):
     """Parse local environment configurations from templates."""
+    check_git_installed()  # Ensure Git is installed before proceeding
     if not (sys_directory / 'docker-compose.yaml').exists() or not (sys_directory / '.env').exists():
         click.echo(click.style(NOT_SET_UP, fg='red', bold=True))
         raise click.Abort()
