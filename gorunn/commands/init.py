@@ -200,7 +200,7 @@ def create_config(import_repo):
 
     stack_name_message = f"Please enter your stack name (no spaces or special characters)"
     projects_repo_url_message = f"GitHub repo URL of project manifests[leave empty if you want to use it without repo]"
-    projects_local_path_message = f"Enter full path to the directory where your project stack is or should be pulled from repo"
+    project_manifests_dir_message = f"Enter full path to the directory where your project stack is or should be pulled from repo"
     workspace_message = f"Enter the workspace path for the projects"
     subnet_message = f"Which subnet to use for Docker Compose network? Leave empty to use default"
     service_choices = supported_services
@@ -218,8 +218,8 @@ def create_config(import_repo):
         hide_input=False,
         value_proc=validate_and_transform_input
     )
-    projects_local_path = path(
-        projects_local_path_message,
+    project_manifests_dir = path(
+        project_manifests_dir_message,
         existing_config.get('projects', {}).get('path', default_projects_directory)
     )
     projects_repo_url = import_repo if import_repo else click.prompt(
@@ -238,7 +238,7 @@ def create_config(import_repo):
     )
     service_answers = inquirer.prompt(questions)
     projects_config = {
-        'path': projects_local_path,
+        'path': project_manifests_dir,
         'repo_url': projects_repo_url
     }
     service_config = {service: (service in service_answers['services']) for service in service_choices}
@@ -284,8 +284,7 @@ def init(ctx, import_repo, run_parse):
 
     config = load_config()
     projects_repo_url = config.get('projects', {}).get('repo_url', '')
-    projects_local_path = Path(config.get('projects', {}).get('path', default_projects_directory))
-    envs_directory = projects_local_path / 'env'
+    project_manifests_dir = Path(config.get('projects', {}).get('path', default_projects_directory))
     stack_name = config.get('stack_name', default_stack_name)
     encryption_key = config.get('encryption_key', '')
     docker_compose_subnet = config.get('docker_compose_subnet', subnet)
@@ -300,36 +299,37 @@ def init(ctx, import_repo, run_parse):
     rabbitmq_enabled = config.get('services', {}).get('rabbitmq', False)
 
     styled_DOCS_LINK_PROJECTS = click.style(DOCS_LINK_PROJECTS, fg='blue')
-    styled_projects_local_path = click.style(projects_local_path, fg='red')
+    styled_project_manifests_dir = click.style(project_manifests_dir, fg='red')
     styled_projects_repo_url = click.style(projects_repo_url, fg='blue')
-    if projects_local_path.exists() and any(projects_local_path.glob('*.yaml')):
+    if project_manifests_dir.exists() and any(project_manifests_dir.glob('*.yaml')):
         if projects_repo_url:
             if click.confirm(
-                    f"Project directory {styled_projects_local_path} exists with project manifests. Do you want to pull the latest updates from {styled_projects_repo_url}?"):
-                clone_or_pull_repository(projects_repo_url, projects_local_path)
+                    f"Project directory {styled_project_manifests_dir} exists with project manifests. Do you want to pull the latest updates from {styled_projects_repo_url}?"):
+                clone_or_pull_repository(projects_repo_url, project_manifests_dir)
         else:
-            click.echo(click.style(f"Found existing project directory at {styled_projects_local_path}", fg='yellow'))
+            click.echo(click.style(f"Found existing project directory at {styled_project_manifests_dir}", fg='yellow'))
     else:
-        click.echo(f"No projects configuration found or {styled_projects_local_path} does not exist.")
+        click.echo(f"No projects configuration found or {styled_project_manifests_dir} does not exist.")
         if projects_repo_url:
-            clone_or_pull_repository(projects_repo_url, projects_local_path)
+            clone_or_pull_repository(projects_repo_url, project_manifests_dir)
         else:
-            check_or_create_directory(projects_local_path)
-            click.echo(click.style(f"Check {styled_DOCS_LINK_PROJECTS} on how to set up projects in {styled_projects_local_path}", fg='yellow'))
+            check_or_create_directory(project_manifests_dir)
+            click.echo(click.style(f"Check {styled_DOCS_LINK_PROJECTS} on how to set up projects in {styled_project_manifests_dir}", fg='yellow'))
 
     # Create envs directory
-    check_or_create_directory(envs_directory)
     # Get existing projects config or empty dict if it doesn't exist
     existing_projects = existing_config.get('projects', {})
 
     projects_config = {
-        'path': existing_projects.get('path', projects_local_path),
+        'path': existing_projects.get('path', project_manifests_dir),
         'repo_url': existing_projects.get('repo_url', projects_repo_url)
     }
+    envs_directory = project_manifests_dir / 'env'
+    check_or_create_directory(envs_directory)
 
     substitutions = {
         'stack_name': stack_name,
-        'projects_local_path': projects_local_path,
+        'project_manifests_dir': project_manifests_dir,
         'mysql': mysql_enabled,
         'postgres': postgres_enabled,
         'redis': redis_enabled,

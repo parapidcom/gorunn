@@ -16,7 +16,7 @@ services:
       - ./mounts/php/files/supervisord.conf:/etc/supervisord.conf
       - ./mounts/php/scripts:/scripts
       - /var/www/code/.git/
-      - {{ projects_local_path }}:/projects
+      - {{ project_manifests_dir }}:/projects
       - /var/www/code/.vscode/
       - /var/www/code/.phpstorm/
     {% if env_vars %}

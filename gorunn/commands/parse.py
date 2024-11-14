@@ -6,7 +6,7 @@ import hashlib
 from gorunn.utils import copy_directory, remove_directory
 from gorunn.commands.start import start
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from gorunn.config import sys_directory, template_directory, envs_directory, docker_template_directory, \
+from gorunn.config import sys_directory, template_directory, docker_template_directory, \
     db_username, db_password, load_config
 from gorunn.helpers import decrypt_file, parse_template, getarch, generate_encryption_string, encrypt_file, check_git_installed
 from gorunn.commands.destroy import destroy
@@ -50,8 +50,10 @@ def handle_dockerfile(project_path, dockerfile_template_path, substitutions):
             f.write(dockerfile_content)
         click.echo("Dockerfile created.")
 
-def handle_env_file(project_config, project_path, project_file):
+def handle_env_file(project_config, project_manifests_dir, project_file):
     """Generate or update environment file for a project if required."""
+    print("dir:", project_manifests_dir)
+    envs_directory = project_manifests_dir / 'env'
     env_file_path = envs_directory / f"{project_file.stem}.env"
     encrypted_file_path = envs_directory / f"{project_file.stem}.env.encrypted"
 
@@ -82,7 +84,6 @@ def handle_env_file(project_config, project_path, project_file):
             env_template_path = template_directory / 'envs' / f"{project_config['type']}.env.tmpl"
             env = Environment(loader=FileSystemLoader(env_template_path.parent), autoescape=select_autoescape(['html', 'xml', 'yaml']))
             template = env.get_template(env_template_path.name)
-
             substitutions = {
                 'stack_name': stack_name,
                 'envs_directory': envs_directory,
@@ -132,17 +133,17 @@ def parse(ctx):
     config = load_config()
     workspace_path = Path(config['workspace_path'])
     stack_name = config['stack_name']
-    projects_local_path = config['projects']['path']
-
+    project_manifests_dir = Path(config['projects']['path'])
+    envs_directory = project_manifests_dir / 'env'
     # Delete existing docker-compose*.yaml files except the main docker-compose.yaml
     for existing_file in sys_directory.glob('docker-compose*.yaml'):
         if existing_file.name != 'docker-compose.yaml':
             existing_file.unlink()
 
     docker_compose_paths = ['docker-compose.yaml']
-    projects_directory = Path(config['projects']['path'])
+    project_manifests_path = Path(config['projects']['path'])
 
-    for project_file in projects_directory.glob('*.yaml'):
+    for project_file in project_manifests_path.glob('*.yaml'):
         with open(project_file) as f:
             project_config = yaml.safe_load(f)
 
@@ -159,14 +160,13 @@ def parse(ctx):
             except subprocess.CalledProcessError as e:
                 click.echo(click.style(f"Failed to clone repository {project_config['git_repo']}: {e}", fg='red'), err=True)
                 continue  # Skip this project or handle the error as appropriate
-
         substitutions = {
             'stack_name': stack_name,
             'envs_directory': envs_directory,
             'name': project_file.stem,
             'env_vars': project_config.get('env_vars', False),
             'workspace_path': str(workspace_path),
-            'projects_local_path': str(projects_local_path),
+            'project_manifests_dir': str(project_manifests_dir),
             'server': project_config.get('server', 'dev'),
             'listen_port': project_config.get('listen_port', ''),
             'version': project_config.get('version', '0'),
@@ -175,11 +175,10 @@ def parse(ctx):
             'database_password': db_password,
             'arch': getarch()
         }
-
         docker_compose_template_path = docker_template_directory / f"docker-compose.{project_config['type']}.yaml.tmpl"
         docker_compose_target_path = sys_directory / f"docker-compose.{project_file.stem}.yaml"
         # Generate environment file if necessary
-        handle_env_file(project_config, project_path, project_file)
+        handle_env_file(project_config, project_manifests_path, project_file)
         # Generate dockerfiles
         handle_dockerfile(project_path, dockerfile_template_path, substitutions)
 
@@ -189,8 +188,8 @@ def parse(ctx):
         docker_compose_paths.append(docker_compose_target_path.name)
 
     # Update the .env file with the correct COMPOSE_FILE order
-    env_file_path = sys_directory / '.env'
-    with open(env_file_path, 'r+') as ef:
+    global_env_file_path = sys_directory / '.env'
+    with open(global_env_file_path, 'r+') as ef:
         lines = ef.readlines()
         ef.seek(0)
         ef.truncate()

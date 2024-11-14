@@ -14,7 +14,7 @@ services:
       - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/var/www/code/node_modules/.bin
     volumes:
       - {{ workspace_path }}/{{ name }}:/var/www/code:delegated
-      - {{ projects_local_path }}:/projects
+      - {{ project_manifests_dir }}:/projects
       - ./mounts/node/scripts:/scripts
       - ./mounts/node/files/supervisord.conf:/etc/supervisord.conf
       - /var/www/code/.git/

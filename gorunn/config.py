@@ -22,7 +22,6 @@ src_directory = sys_directory / 'src'
 config_file = config_directory / 'config.yaml'
 
 default_projects_directory = workspace_base_directory / 'projects'
-envs_directory = default_projects_directory / 'env'
 default_wokspace_directory = workspace_base_directory / 'workspace'
 default_stack_name = 'gorunn'
 
@@ -42,7 +41,7 @@ docker_compose_template = docker_template_directory / 'docker-compose.yaml.tmpl'
 env_template = docker_template_directory / '.env.tmpl'
 
 # Supported services
-supported_services = ['mysql', 'postgres', 'redis', 'memcached', 'kafka', 'chroma', 'opensearch', 'mongodb', 'rabbitmq']
+supported_services = ['mysql', 'postgres', 'redis', 'memcached', 'kafka', 'chroma', 'opensearch', 'mongodb', 'rabbitmq', 'proxy']
 
 def load_config():
     """Load the main configuration file or return None if it doesn't exist."""

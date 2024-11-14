@@ -26,7 +26,7 @@ services:
       - ./mounts/proxy/scripts/nginx.sh:/scripts/nginx.sh
       - ./mounts/proxy/templates/:/templates
       - ./mounts/proxy/files/supervisord.conf:/etc/supervisord.conf
-      - {{ projects_local_path }}:/projects
+      - {{ project_manifests_dir }}:/projects
       - ./.env:/.env
     ports:
       - '80:80'

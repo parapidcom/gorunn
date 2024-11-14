@@ -18,7 +18,8 @@ def restart(app, include_services=True):
     try:
         config = load_config()
         stack_name = config['stack_name']
-        handle_encrypted_envs(config)
+        projects_path = Path(config['projects']['path'])
+        handle_encrypted_envs(config, projects_path)
     except:
         click.echo(click.style(NOT_SET_UP, fg='red'))
         click.Abort()

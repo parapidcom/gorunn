@@ -9,7 +9,7 @@ import yaml
 import platform
 import socket
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from gorunn.config import docker_template_directory, load_config, sys_directory, envs_directory
+from gorunn.config import docker_template_directory, load_config, sys_directory
 from cryptography.fernet import Fernet
 
 # Check if docker is running
@@ -178,7 +178,7 @@ def decrypt_file(encrypted_file_path, encryption_key, output_path=None):
         click.echo(click.style(f"Decryption failed: {str(e)}", fg='red'))
         return False
 
-def handle_encrypted_envs(config):
+def handle_encrypted_envs(config, projects_path):
     """Handle decryption of encrypted environment files before starting services."""
     try:
         encryption_key = config.get('encryption_key')
@@ -186,9 +186,10 @@ def handle_encrypted_envs(config):
             click.echo(click.style("No encryption key found in configuration", fg='yellow'))
             return
 
-        for encrypted_file in envs_directory.glob('*.env.encrypted'):
+        env_directory = projects_path / 'env'
+        for encrypted_file in env_directory.glob('*.env.encrypted'):
             app_name = encrypted_file.stem.replace('.env', '')
-            env_file = envs_directory / f"{app_name}.env"
+            env_file = env_directory / f"{app_name}.env"
 
             # Skip if unencrypted file already exists
             if env_file.exists():

@@ -6,3 +6,5 @@ BEGIN
     EXECUTE format('GRANT ALL PRIVILEGES ON DATABASE %I TO %I', db.datname, current_user);
   END LOOP;
 END $$;
+
+CREATE SCHEMA IF NOT EXISTS AUTHORIZATION current_user;

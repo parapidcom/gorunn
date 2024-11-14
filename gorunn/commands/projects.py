@@ -3,7 +3,7 @@ import subprocess
 import yaml
 from datetime import datetime
 from pathlib import Path
-from gorunn.config import config_directory, load_config, envs_directory
+from gorunn.config import config_directory, load_config
 from gorunn.translations import *
 from gorunn.helpers import encrypt_file, decrypt_file
 
@@ -109,8 +109,10 @@ def env(encrypt, decrypt, app):
             click.echo(click.style("No encryption key found in configuration", fg='red'))
             return
 
-        env_file = envs_directory / f"{app}.env"
-        encrypted_file = envs_directory / f"{app}.env.encrypted"
+        projects_path = Path(config['projects']['path'])
+        env_directory = projects_path / 'env'
+        env_file = env_directory / f"{app}.env"
+        encrypted_file = env_directory / f"{app}.env.encrypted"
 
         if encrypt:
             if not env_file.exists():

@@ -14,7 +14,7 @@ services:
       - application_name={{ name }}
     volumes:
       - {{ workspace_path }}/{{ name }}:/var/www/code:delegated
-      - {{ projects_local_path }}:/projects
+      - {{ project_manifests_dir }}:/projects
       - ./mounts/python/scripts/:/scripts/
       - ./mounts/python/files/supervisord.conf:/etc/supervisord.conf
       - /var/www/code/.git/

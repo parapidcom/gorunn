@@ -1,10 +1,11 @@
 import click
 import subprocess
 import yaml
-from gorunn.config import sys_directory, config_file, load_config, envs_directory
+from gorunn.config import sys_directory, config_file, load_config
 from gorunn.helpers import check_docker, check_port, decrypt_file, handle_encrypted_envs
 from gorunn.classes.app_validator import AppValidator
 from gorunn.translations import *
+from pathlib import Path
 
 @click.command()
 @click.option('--app', help='Specify one or more applications to start, separated by commas.', default=None,
@@ -17,11 +18,12 @@ def start(app, build):
     try:
         config = load_config()
         stack_name = config['stack_name']
+        projects_path = Path(config['projects']['path'])
     except:
         click.echo(click.style(NOT_SET_UP, fg='red'))
         click.Abort()
     # Handle encrypted env files before starting services
-    handle_encrypted_envs(config)
+    handle_encrypted_envs(config, projects_path)
     build_command = ['docker', 'compose', 'build']
     command = ['docker', 'compose', 'up', '-d', '--remove-orphans']
     check_docker()
