@@ -24,6 +24,6 @@ RUN apk --update add --no-cache \
 RUN npm install -g pnpm ng
 
 ENTRYPOINT ["/scripts/entrypoint.sh"]
-EXPOSE 4200 3000
+EXPOSE 4200 3000 80
 # -------TO HERE--------
 # ------ADD FROM HERE AS NEEDED-----

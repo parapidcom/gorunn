@@ -1,3 +1,2 @@
 recursive-include gorunn/templates *
 include README.md
-include requirements.txt

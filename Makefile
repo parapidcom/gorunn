@@ -1,6 +1,6 @@
 .PHONY: release shasum clean
 
-VERSION := $(shell python setup.py --version)
+VERSION := $(shell grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
 DIST_PATH := dist
 APP_NAME := gorunn
 RELEASE_NOTES := "Stable release version $(VERSION)"
@@ -10,7 +10,7 @@ clean:
 	rm -fr build/ dist/
 # Build the package distribution
 build: clean
-	python setup.py sdist bdist_wheel
+	python -m build
 
 # Create SHA sum file
 shasum: build

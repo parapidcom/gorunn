@@ -34,7 +34,7 @@ def destroy(app,wipedb=None):
 
     command = ['docker', 'compose', 'down']
     command.extend(app_list)
-    command.extend('--remove-orphans')
+    command.append('--remove-orphans')
     try:
         subprocess.run(command, check=True, cwd=sys_directory)
         if app is None:
