@@ -12,8 +12,8 @@ server {
         add_header Access-Control-Allow-Origin $http_origin;
         }
         resolver 127.0.0.11 valid=30s;
-        set ${{ .Env.name }}_backend "http://{{ .Env.project }}-{{ .Env.name }}:{{ .Env.listen_port }}";
-        proxy_pass ${{ .Env.name }}_backend;
+        set ${{ .Env.name_safe }}_backend "http://{{ .Env.project }}-{{ .Env.name }}:{{ .Env.listen_port }}";
+        proxy_pass ${{ .Env.name_safe }}_backend;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header Sec-WebSocket-Key $http_sec_websocket_key;

@@ -15,6 +15,7 @@ for project in /projects/*.yaml; do
 
   # Use `yq` to extract values directly from the YAML file
   export name=$app
+  export name_safe=$(echo "$app" | sed 's/-/_/g')  # Replace hyphens with underscores for nginx variables
   export type=$(yq e '.type' "$project")
   export endpoint=$(yq e '.endpoint' "$project")
   export server=$(yq e '.server' "$project")

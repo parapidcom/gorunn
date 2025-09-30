@@ -10,8 +10,8 @@ server {
         if ($http_origin ~* "^https?://*.\.ngrok\.io$" ) {
         add_header Access-Control-Allow-Origin $http_origin;
         }
-        set ${{ .Env.name }}_backend "http://{{ .Env.project }}-{{ .Env.name }}:{{ .Env.listen_port }}";
-        proxy_pass ${{ .Env.name }}_backend;
+        set ${{ .Env.name_safe }}_backend "http://{{ .Env.project }}-{{ .Env.name }}:{{ .Env.listen_port }}";
+        proxy_pass ${{ .Env.name_safe }}_backend;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

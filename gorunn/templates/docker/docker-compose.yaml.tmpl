@@ -54,7 +54,7 @@ services:
   {% if postgres %}
   {{ stack_name }}-postgres:
     container_name: {{ stack_name }}-postgres
-    image: postgres:13
+    image: postgres:17
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
