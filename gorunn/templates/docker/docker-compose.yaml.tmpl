@@ -59,7 +59,7 @@ services:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - ./src/postgres/local-data:/var/lib/postgres/data
+      - ./src/postgres/local-data:/var/lib/postgresql/data
       - ./mounts/postgres/:/docker-entrypoint-initdb.d
     ports:
       - '15432:5432'
