@@ -41,7 +41,7 @@ docker_compose_template = docker_template_directory / 'docker-compose.yaml.tmpl'
 env_template = docker_template_directory / '.env.tmpl'
 
 # Supported services
-supported_services = ['mysql', 'postgres', 'redis', 'memcached', 'kafka', 'chroma', 'opensearch', 'mongodb', 'rabbitmq', 'proxy']
+supported_services = ['mysql', 'postgres', 'redis', 'memcached', 'kafka', 'chroma', 'opensearch', 'mongodb', 'rabbitmq', 'proxy', 'localstack']
 
 def load_config():
     """Load the main configuration file or return None if it doesn't exist."""

@@ -13,7 +13,7 @@ def projects():
     pass
 
 @projects.command()
-@click.option('--branch', default='master', help='Branch to pull projects files from.')
+@click.option('--branch', default='main', help='Branch to pull projects files from.')
 def pull(branch):
     """Pulls the latest changes for the projects."""
     try:
@@ -75,7 +75,7 @@ def publish():
     push_needed_result = subprocess.run(['git', 'log', '--branches', '--not', '--remotes'], cwd=projects_directory, capture_output=True, text=True)
     if push_needed_result.stdout.strip():
         if click.confirm(click.style("Do you want to push the changes to live?", fg='cyan'), default=True):
-            push_result = subprocess.run(['git', 'push', 'origin', 'master'], cwd=projects_directory, capture_output=True, text=True)
+            push_result = subprocess.run(['git', 'push', 'origin', branch], cwd=projects_directory, capture_output=True, text=True)
             if push_result.returncode == 0:
                 click.echo(click.style("Changes pushed to live successfully.", fg='green'))
             else:

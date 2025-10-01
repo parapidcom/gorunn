@@ -200,3 +200,17 @@ services:
     networks:
       {{ stack_name }}_network:
   {% endif %}
+  {% if localstack %}
+  {{ stack_name }}-localstack:
+    image: localstack/localstack
+    container_name: {{ stack_name }}-localstack
+    restart: always
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3,sqs,ses
+    volumes:
+      - ./src/localstack/local-data:/data
+    networks:
+      {{ stack_name }}_network:
+  {% endif %}

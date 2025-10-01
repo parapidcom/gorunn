@@ -290,6 +290,7 @@ def init(ctx, import_repo, run_parse):
     docker_compose_subnet = config.get('docker_compose_subnet', subnet)
     mysql_enabled = config.get('services', {}).get('mysql', True)
     postgres_enabled = config.get('services', {}).get('postgres', False)
+    localstack_enabled = config.get('services', {}).get('localstack', False)
     redis_enabled = config.get('services', {}).get('redis', True)
     memcached_enabled = config.get('services', {}).get('memcached', False)
     chroma_enabled = config.get('services', {}).get('chroma', False)
@@ -332,6 +333,7 @@ def init(ctx, import_repo, run_parse):
         'project_manifests_dir': project_manifests_dir,
         'mysql': mysql_enabled,
         'postgres': postgres_enabled,
+        'localstack': localstack_enabled,
         'redis': redis_enabled,
         'chroma': chroma_enabled,
         'opensearch': opensearch_enabled,
