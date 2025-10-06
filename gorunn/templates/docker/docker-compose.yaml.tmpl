@@ -210,7 +210,7 @@ services:
     environment:
       SERVICES: s3,sqs,ses
     volumes:
-      - ./src/localstack/local-data:/data
+      - ./src/localstack/local-data:/var/lib/localstack
     networks:
       {{ stack_name }}_network:
   {% endif %}
