@@ -32,7 +32,9 @@ def info():
         for project_file in project_files:
             with open(project_file, 'r') as file:
                 project = yaml.safe_load(file)
-                click.echo(click.style(f"Project Name: {project_file.stem}", fg='green'))
+                # Prefer manifest-defined name; fallback to filename stem
+                app_name = project.get('name', project_file.stem)
+                click.echo(click.style(f"Project Name: {app_name}", fg='green'))
                 endpoint = project['endpoint']
                 if endpoint:
                     click.echo(f"Endpoint: https://{endpoint}")

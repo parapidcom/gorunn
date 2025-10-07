@@ -6,14 +6,14 @@ services:
       context: .
       args:
         ARCH: {{ arch }}
-      dockerfile: {{ workspace_path }}/{{ name }}/Dockerfile.gorunn
+      dockerfile: {{ workspace_path }}/{{ code_dir }}/Dockerfile.gorunn
     entrypoint: ["/scripts/entrypoint.sh"]
     command: ["supervisord"]
     working_dir: /var/www/code
     environment:
       - application_name={{ name }}
     volumes:
-      - {{ workspace_path }}/{{ name }}:/var/www/code:delegated
+      - {{ workspace_path }}/{{ code_dir }}:/var/www/code:delegated
       - {{ project_manifests_dir }}:/projects
       - ./mounts/python/scripts/:/scripts/
       - ./mounts/python/files/supervisord.conf:/etc/supervisord.conf

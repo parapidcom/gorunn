@@ -6,12 +6,12 @@ services:
       context: .
       args:
         ARCH: {{ arch }}
-      dockerfile: {{ workspace_path }}/{{ name }}/Dockerfile.gorunn
+      dockerfile: {{ workspace_path }}/{{ code_dir }}/Dockerfile.gorunn
     command: ["supervisord"]
     environment:
       - application_name={{ name }}
     volumes:
-      - {{ workspace_path }}/{{ name }}:/var/www/code:delegated
+      - {{ workspace_path }}/{{ code_dir }}:/var/www/code:delegated
       - ./mounts/php/templates/docker-php-ext-xdebug.tmpl:/templates/xdebug.ini
       - ./mounts/php/files/supervisord.conf:/etc/supervisord.conf
       - ./mounts/php/scripts:/scripts

@@ -147,11 +147,19 @@ def parse(ctx):
         with open(project_file) as f:
             project_config = yaml.safe_load(f)
 
-        project_path = workspace_path / project_file.stem
+        # Prefer manifest-defined name; fallback to filename stem
+        app_name = project_config.get('name', project_file.stem)
+
+        repo_url = project_config.get('git_repo', '')
+        repo_tail = repo_url.rsplit('/', 1)[-1].rsplit(':', 1)[-1]
+        repo_dir = repo_tail[:-4] if repo_tail.endswith('.git') else repo_tail
+        code_dir = repo_dir if repo_dir else project_file.stem
+
+        project_path = workspace_path / code_dir
 
         dockerfile_template_path = docker_template_directory / 'dockerfiles' / project_config['type'] / 'Dockerfile.tmpl'
 
-        click.echo(click.style(f"Parsing project: {project_file.stem}", fg='green'))
+        click.echo(click.style(f"Parsing project: {app_name}", fg='green'))
         if not project_path.exists():
             try:
                 click.echo(click.style(f"Cloning repository {project_config['git_repo']}...", fg='yellow'))
@@ -163,7 +171,8 @@ def parse(ctx):
         substitutions = {
             'stack_name': stack_name,
             'envs_directory': envs_directory,
-            'name': project_file.stem,
+            'name': app_name,
+            'code_dir': code_dir,
             'env_vars': project_config.get('env_vars', False),
             'workspace_path': str(workspace_path),
             'project_manifests_dir': str(project_manifests_dir),

@@ -7,13 +7,13 @@ services:
       context: .
       args:
         ARCH: {{ arch }}
-      dockerfile: {{ workspace_path }}/{{ name }}/Dockerfile.gorunn
+      dockerfile: {{ workspace_path }}/{{ code_dir }}/Dockerfile.gorunn
     working_dir: /var/www/code
     environment:
       - application_name={{ name }}
       - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/var/www/code/node_modules/.bin
     volumes:
-      - {{ workspace_path }}/{{ name }}:/var/www/code:delegated
+      - {{ workspace_path }}/{{ code_dir }}:/var/www/code:delegated
       - {{ project_manifests_dir }}:/projects
       - ./mounts/node/scripts:/scripts
       - ./mounts/node/files/supervisord.conf:/etc/supervisord.conf
