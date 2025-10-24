@@ -206,7 +206,7 @@ services:
     container_name: {{ stack_name }}-localstack
     restart: always
     ports:
-      - "4566:4566"
+      - "14566:4566"
     environment:
       SERVICES: s3,sqs,ses
     volumes:
