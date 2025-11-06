@@ -33,6 +33,8 @@ services:
       - '443:443'
     networks:
       {{ stack_name }}_network:
+        aliases:
+          - localstack.local.gorunn.io
   {% if mysql %}
   {{ stack_name }}-mysql:
     container_name: {{ stack_name }}-mysql

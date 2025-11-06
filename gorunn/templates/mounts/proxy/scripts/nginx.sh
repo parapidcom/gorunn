@@ -34,4 +34,16 @@ for project in /projects/*.yaml; do
   fi
 done
 
+# Generate localstack virtual host if localstack container is available
+localstack_host="${COMPOSE_PROJECT_NAME}-localstack"
+if getent hosts "$localstack_host" > /dev/null 2>&1; then
+  echo "Generating localstack virtual host..."
+  export project=${COMPOSE_PROJECT_NAME}
+  if [ -f "/templates/localstack.ctmpl" ]; then
+    dockerize -template "/templates/localstack.ctmpl:/etc/nginx/conf.d/localstack.conf"
+  else
+    echo "Localstack template not found."
+  fi
+fi
+
 exec nginx -g 'daemon off;'
