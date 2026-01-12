@@ -291,6 +291,7 @@ def init(ctx, import_repo, run_parse):
     mysql_enabled = config.get('services', {}).get('mysql', True)
     postgres_enabled = config.get('services', {}).get('postgres', False)
     localstack_enabled = config.get('services', {}).get('localstack', False)
+    mailpit_enabled = config.get('services', {}).get('mailpit', False)
     redis_enabled = config.get('services', {}).get('redis', True)
     memcached_enabled = config.get('services', {}).get('memcached', False)
     chroma_enabled = config.get('services', {}).get('chroma', False)
@@ -334,6 +335,7 @@ def init(ctx, import_repo, run_parse):
         'mysql': mysql_enabled,
         'postgres': postgres_enabled,
         'localstack': localstack_enabled,
+        'mailpit': mailpit_enabled,
         'redis': redis_enabled,
         'chroma': chroma_enabled,
         'opensearch': opensearch_enabled,

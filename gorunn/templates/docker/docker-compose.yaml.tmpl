@@ -35,6 +35,9 @@ services:
       {{ stack_name }}_network:
         aliases:
           - localstack.local.gorunn.io
+  {% if mailpit %}
+          - mailpit.local.gorunn.io
+  {% endif %}
   {% if mysql %}
   {{ stack_name }}-mysql:
     container_name: {{ stack_name }}-mysql
@@ -199,6 +202,17 @@ services:
       - "15672:15672"
     volumes:
       - ./src/rabbitmq/local-data:/var/lib/rabbitmq
+    networks:
+      {{ stack_name }}_network:
+  {% endif %}
+  {% if mailpit %}
+  {{ stack_name }}-mailpit:
+    container_name: {{ stack_name }}-mailpit
+    image: axllent/mailpit
+    restart: always
+    ports:
+      - "11025:1025"
+      - "18025:8025"
     networks:
       {{ stack_name }}_network:
   {% endif %}

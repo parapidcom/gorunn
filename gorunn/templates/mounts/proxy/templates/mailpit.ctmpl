@@ -1,0 +1,19 @@
+# mailpit
+
+server {
+    listen          443 ssl;
+    listen          80;
+    server_name     mailpit.local.gorunn.io;
+    include /etc/nginx/common.conf;
+
+    location / {
+        resolver 127.0.0.11 valid=30s;
+        set $mailpit_backend "http://{{ .Env.project }}-mailpit:8025";
+        proxy_pass $mailpit_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+    }
+}

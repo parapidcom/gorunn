@@ -46,4 +46,16 @@ if getent hosts "$localstack_host" > /dev/null 2>&1; then
   fi
 fi
 
+# Generate mailpit virtual host if mailpit container is available
+mailpit_host="${COMPOSE_PROJECT_NAME}-mailpit"
+if getent hosts "$mailpit_host" > /dev/null 2>&1; then
+  echo "Generating mailpit virtual host..."
+  export project=${COMPOSE_PROJECT_NAME}
+  if [ -f "/templates/mailpit.ctmpl" ]; then
+    dockerize -template "/templates/mailpit.ctmpl:/etc/nginx/conf.d/mailpit.conf"
+  else
+    echo "Mailpit template not found."
+  fi
+fi
+
 exec nginx -g 'daemon off;'
