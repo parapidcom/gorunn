@@ -179,6 +179,7 @@ def parse(ctx):
             'server': project_config.get('server', 'dev'),
             'listen_port': project_config.get('listen_port', ''),
             'version': project_config.get('version', '0'),
+            'image_suffix': project_config.get('image_suffix', 'bullseye'),
             'type': project_config.get('type', 'php'),
             'database_username': db_username,
             'database_password': db_password,

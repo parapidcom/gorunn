@@ -1,11 +1,11 @@
 # -------DON'T EDIT FROM HERE--------
 # change version in project file yaml
-FROM python:{{ version }}-bullseye
+FROM python:{{ version }}-{{ image_suffix }}
 ARG ARCH
 # Install base dependencies
 RUN apt-get -y update
 RUN apt-get -y upgrade
-RUN apt-get install -y supervisor less telnet cron awscli
+RUN apt-get install -y supervisor less telnet cron awscli wget
 
 # set work directory
 WORKDIR /var/www/code
