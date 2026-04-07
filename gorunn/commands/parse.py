@@ -12,12 +12,30 @@ from gorunn.helpers import decrypt_file, parse_template, getarch, generate_encry
 from gorunn.commands.destroy import destroy
 from gorunn.translations import *
 
+DOCKERFILE_CUSTOM_SECTION_MARKER = "# ------ADD FROM HERE AS NEEDED-----"
+
 
 def generate_dockerfile_from_template(template_path, substitutions):
     """Generate content from a Jinja2 template with substitutions."""
     env = Environment(loader=FileSystemLoader(template_path.parent), autoescape=select_autoescape(['html', 'xml', 'yaml']))
     template = env.get_template(template_path.name)
     return template.render(**substitutions)
+
+
+def merge_preserved_dockerfile_content(generated_content, existing_content):
+    """Preserve user-managed Dockerfile content below the custom section marker."""
+    if DOCKERFILE_CUSTOM_SECTION_MARKER not in generated_content:
+        return generated_content
+
+    generated_prefix, _, _ = generated_content.partition(DOCKERFILE_CUSTOM_SECTION_MARKER)
+    marker_line = f"{DOCKERFILE_CUSTOM_SECTION_MARKER}\n"
+
+    if existing_content and DOCKERFILE_CUSTOM_SECTION_MARKER in existing_content:
+        _, _, existing_suffix = existing_content.partition(DOCKERFILE_CUSTOM_SECTION_MARKER)
+        preserved_suffix = existing_suffix.lstrip("\n")
+        return f"{generated_prefix}{marker_line}{preserved_suffix}"
+
+    return generated_content if generated_content.endswith("\n") else f"{generated_content}\n"
 
 def get_file_checksum(file_path):
     """Calculate the MD5 checksum of a file."""
@@ -33,7 +51,9 @@ def handle_dockerfile(project_path, dockerfile_template_path, substitutions):
     version from the template, and optionally replaces it if there are differences.
     """
     dockerfile_target = project_path / 'Dockerfile.gorunn'
+    existing_content = dockerfile_target.read_text() if dockerfile_target.exists() else ''
     dockerfile_content = generate_dockerfile_from_template(dockerfile_template_path, substitutions)
+    dockerfile_content = merge_preserved_dockerfile_content(dockerfile_content, existing_content)
     dockerfile_checksum = hashlib.md5(dockerfile_content.encode('utf-8')).hexdigest()
 
     if dockerfile_target.exists():

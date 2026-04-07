@@ -31,7 +31,7 @@ def start(app, build):
     check_port(80, stack_name)
     check_port(443, stack_name)
     if app:
-        build_command.extend(f"{stack_name}-{app}")
+        build_command.append(f"{stack_name}-{app}")
         command.append(f"{stack_name}-{app}")
     # Run the Docker Compose command
     try:
